@@ -41,25 +41,26 @@ def survey_schema(concept):
         "required": ["option", "score", "reaction"],
         "additionalProperties": False,
     }
+    props = {
+        "first_impression": {"type": "string"},
+        "name_ratings": {"type": "array", "items": variant_rating,
+                         "minItems": n_names, "maxItems": n_names},
+        "name_ranking": {"type": "array", "items": {"type": "string"}},
+        "would_try_within_month": {"type": "string",
+                                   "enum": ["definitely", "probably", "maybe", "unlikely", "no"]},
+        "expected_price": {"type": "number",
+                           "description": f"What you'd expect to pay for: {concept.get('price_probe', 'a typical order')}"},
+        "biggest_turnoff": {"type": "string"},
+        "one_change_suggestion": {"type": "string"},
+    }
+    if concept.get("slogan_options"):
+        props["slogan_ratings"] = {"type": "array", "items": variant_rating}
+    if concept.get("packaging_options"):
+        props["packaging_ratings"] = {"type": "array", "items": variant_rating}
     return {
         "type": "object",
-        "properties": {
-            "first_impression": {"type": "string"},
-            "name_ratings": {"type": "array", "items": variant_rating,
-                             "minItems": n_names, "maxItems": n_names},
-            "name_ranking": {"type": "array", "items": {"type": "string"}},
-            "slogan_ratings": {"type": "array", "items": variant_rating},
-            "packaging_ratings": {"type": "array", "items": variant_rating},
-            "would_try_within_month": {"type": "string",
-                                       "enum": ["definitely", "probably", "maybe", "unlikely", "no"]},
-            "expected_price": {"type": "number",
-                               "description": f"What you'd expect to pay for: {concept.get('price_probe', 'a typical order')}"},
-            "biggest_turnoff": {"type": "string"},
-            "one_change_suggestion": {"type": "string"},
-        },
-        "required": ["first_impression", "name_ratings", "name_ranking", "slogan_ratings",
-                     "packaging_ratings", "would_try_within_month",
-                     "expected_price", "biggest_turnoff", "one_change_suggestion"],
+        "properties": props,
+        "required": list(props),
         "additionalProperties": False,
     }
 

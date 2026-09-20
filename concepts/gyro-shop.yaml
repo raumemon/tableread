@@ -1,26 +1,23 @@
-# Gyro shop branding test — PLACEHOLDER variants, replace with your real options.
-working_title: Gyro shop (Spokane)
+working_title: Gyro/kebab shop (Spokane)
 concept: >
-  Fast-casual gyro and shawarma shop. Counter service, takeout-friendly,
+  Fast-casual gyro and kebab shop. Counter service, takeout-friendly,
   open late on weekends. Fresh-carved meat, house sauces, pitas made daily.
 location: Spokane, WA (exact site TBD)
 price_probe: a gyro combo (gyro, fries, drink)
 price_point: "$13-16 combo"
 
 name_options:
-  - "PLACEHOLDER Name A"
-  - "PLACEHOLDER Name B"
-  - "PLACEHOLDER Name C"
+  - "The Kebab Spot"
+  - "K Bab"
+  - "K Bob"
+  - "Good Turn"
+  - "Turn It Up Gyros"
+  - "Sumak"
 
-slogan_options:
-  - "PLACEHOLDER slogan one"
-  - "PLACEHOLDER slogan two"
-
-# Text descriptions for v1; image-based packaging tests are a later upgrade.
-packaging_options:
-  - "PLACEHOLDER: kraft paper wrap, minimalist black logo stamp"
-  - "PLACEHOLDER: glossy blue-and-white Greek-diner style box"
+# Add when ready; empty sections are skipped in the survey.
+slogan_options: []
+packaging_options: []
 
 notes: >
-  Fill in real variants before a full run. Anything listed gets rated by every
-  persona, so keep it to 3-5 names, 2-4 slogans, 2-3 packaging directions.
+  Round 1 is a pure name test. Slogan candidates can be mined from this
+  run's verbatims (scripts/mine_language.py) and tested in round 2.

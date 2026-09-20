@@ -87,18 +87,29 @@ def sample_demographics(n, rng):
     return people
 
 
+SUPPLEMENT_DIR = os.path.expanduser("~/projects/site-scout/data/reddit")
+
+
 def load_corpus_sample(max_chars=45000):
-    """High-signal posts and comments across all topics, score-weighted."""
+    """High-signal posts and comments across all topics, score-weighted.
+
+    Blends the dining-topic corpus with site-scout's neighborhood corpus
+    (same file shape); dining files win ties via a small score boost.
+    """
+    paths = [os.path.join(CORPUS_DIR, fn) for fn in sorted(os.listdir(CORPUS_DIR))]
+    if os.path.isdir(SUPPLEMENT_DIR):
+        paths += [os.path.join(SUPPLEMENT_DIR, fn) for fn in sorted(os.listdir(SUPPLEMENT_DIR))]
     items = []
-    for fn in sorted(os.listdir(CORPUS_DIR)):
-        d = json.load(open(os.path.join(CORPUS_DIR, fn)))
+    for path in paths:
+        d = json.load(open(path))
+        boost = 3 if path.startswith(CORPUS_DIR) else 0
         for p in d.get("posts", []):
             text = (p["title"] + ". " + p.get("selftext", "")).strip()
             if len(text) > 40:
-                items.append({"text": text[:900], "score": p.get("score", 0), "sub": d["subreddit"]})
+                items.append({"text": text[:900], "score": p.get("score", 0) + boost, "sub": d["subreddit"]})
         for c in d.get("comments", []):
             if len(c.get("body", "")) > 40:
-                items.append({"text": c["body"][:900], "score": c.get("score", 0), "sub": d["subreddit"]})
+                items.append({"text": c["body"][:900], "score": c.get("score", 0) + boost, "sub": d["subreddit"]})
     items.sort(key=lambda x: -x["score"])
     out, total = [], 0
     for it in items:
