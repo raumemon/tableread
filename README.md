@@ -22,13 +22,35 @@ A table read is how you test the script before production. Same idea.
 ## Run
 
 ```bash
-.venv/bin/python scripts/fetch_dining_reddit.py       # corpus (free, ~15 min, cached)
-.venv/bin/python scripts/build_personas.py -n 100     # panel (~$0.10)
-.venv/bin/python scripts/run_panel.py concepts/gyro-shop.yaml --limit 3   # smoke test
-.venv/bin/python scripts/run_panel.py concepts/gyro-shop.yaml             # full run (~$1)
+.venv/bin/python scripts/fetch_dining_reddit.py       # corpus (free, ~40 min, cached)
+.venv/bin/python scripts/build_personas.py -n 300     # panel (~$0.10, one-time per geo)
+.venv/bin/python scripts/run_panel.py concepts/gyro-shop.yaml --limit 3    # smoke test
+.venv/bin/python scripts/run_panel.py concepts/gyro-shop.yaml --limit 100  # iteration run (~$1)
+.venv/bin/python scripts/run_panel.py concepts/gyro-shop.yaml              # decision run (~$3)
 .venv/bin/python scripts/build_report.py data/results/<run>.json
 open web/report-*.html
 ```
+
+## Qualitative follow-up (the focus-group loop)
+
+The panel is persistent: the quant run flags something, then you re-convene the
+exact personas behind the signal. Each keeps its original survey answer as an
+anchored private stance (fights simulated-group convergence).
+
+```bash
+# focus group of the 6 harshest raters of a name (~$0.40)
+.venv/bin/python scripts/focus_group.py data/results/<run>.json --option "Name B" --pick lowest -k 6
+
+# 1:1 depth interviews instead
+.venv/bin/python scripts/focus_group.py data/results/<run>.json --option "Name B" --pick lowest -k 3 --mode interview
+
+# mine respondent language for hooks/slogans/objections, cross-checked
+# against the real Reddit corpus for authentic local phrasing
+.venv/bin/python scripts/mine_language.py data/results/<run>.json data/qual/*.json
+```
+
+Mined slogans go back into the concept yaml as new variants -> re-run the
+panel: uncover in qual, validate in quant, same day.
 
 Needs `ANTHROPIC_API_KEY` in `.env`.
 
