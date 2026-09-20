@@ -6,7 +6,9 @@ the preservation account key).
 import copy
 import json
 import os
+import random
 import threading
+import time
 
 MODEL = os.environ.get("TABLEREAD_MODEL", "gpt-4o")
 # $/1M tokens: (input, cached input, output)
@@ -64,9 +66,20 @@ class LLM:
         u = self.usage
         return (u["in"] - u["cached"]) / 1e6 * p[0] + u["cached"] / 1e6 * p[1] + u["out"] / 1e6 * p[2]
 
+    def _openai_call(self, **kwargs):
+        """Retry hard on 429s: the org TPM limit is low, so waiting works."""
+        import openai
+        for attempt in range(10):
+            try:
+                return self.client.chat.completions.create(**kwargs)
+            except openai.RateLimitError:
+                if attempt == 9:
+                    raise
+                time.sleep(min(2 ** attempt, 30) + random.uniform(0, 2))
+
     def complete_json(self, system, user, schema, max_tokens=3000):
         if self.provider == "openai":
-            resp = self.client.chat.completions.create(
+            resp = self._openai_call(
                 model=MODEL,
                 max_completion_tokens=max_tokens,
                 messages=[{"role": "system", "content": system},
@@ -90,7 +103,7 @@ class LLM:
 
     def complete_text(self, system, user, max_tokens=500):
         if self.provider == "openai":
-            resp = self.client.chat.completions.create(
+            resp = self._openai_call(
                 model=MODEL, max_completion_tokens=max_tokens,
                 messages=[{"role": "system", "content": system},
                           {"role": "user", "content": user}],

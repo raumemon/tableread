@@ -129,7 +129,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("concept", help="path to concept yaml")
     ap.add_argument("--limit", type=int, default=None, help="only run first N personas (smoke test)")
-    ap.add_argument("--workers", type=int, default=6)
+    ap.add_argument("--workers", type=int, default=3)
+    ap.add_argument("--resume", default=None,
+                    help="previous results json; reuses its completed personas, runs only the rest")
     args = ap.parse_args()
 
     client = LLM()
@@ -143,6 +145,12 @@ def main():
     schema = survey_schema(concept)
 
     results, errors = [], []
+    if args.resume:
+        prev = json.load(open(args.resume))
+        done = {r["persona_id"]: r for r in prev["results"]}
+        results = list(done.values())
+        personas = [p for p in personas if p["id"] not in done]
+        print(f"resuming: {len(results)} already done, {len(personas)} to run")
     with ThreadPoolExecutor(max_workers=args.workers) as ex:
         futs = {ex.submit(run_one, client, system, schema, p, archetypes[p["archetype"]]): p
                 for p in personas}
