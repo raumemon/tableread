@@ -17,18 +17,9 @@ import json
 import os
 import re
 
-import anthropic
+from llm import LLM, MODEL
 
-MODEL = "claude-sonnet-5"
 CORPUS_DIR = "data/corpus"
-
-
-def load_env():
-    if os.path.exists(".env"):
-        for line in open(".env"):
-            if "=" in line and not line.startswith("#"):
-                k, v = line.strip().split("=", 1)
-                os.environ.setdefault(k, v)
 
 
 def collect_verbatims(paths):
@@ -95,15 +86,13 @@ def main():
     ap.add_argument("inputs", nargs="+", help="results and/or qual json files")
     args = ap.parse_args()
 
-    load_env()
-    client = anthropic.Anthropic()
+    client = LLM()
+    print(f"provider: {client.provider}, model: {MODEL}")
     verbatims = collect_verbatims(args.inputs)
     print(f"mining {len(verbatims)} verbatims from {len(args.inputs)} file(s)")
     blob = "\n".join(verbatims)[:180000]
 
-    resp = client.messages.create(
-        model=MODEL, max_tokens=6000,
-        system=(
+    system = (
             "You are a copywriter-researcher mining focus group and survey verbatims for "
             "marketing language, the way agencies pull copy straight from respondent tape. "
             "Extract ONLY language grounded in what respondents actually said — hooks are "
@@ -111,11 +100,8 @@ def main():
             "your inventions. slogan_candidates must each cite their source verbatim(s). "
             "words_to_avoid = words respondents used dismissively or that triggered "
             "negative reactions. register = casual/premium/family/late-night etc."
-        ),
-        messages=[{"role": "user", "content": f"VERBATIMS:\n\n{blob}"}],
-        output_config={"format": {"type": "json_schema", "schema": MINING_SCHEMA}},
     )
-    mined = json.loads(next(b.text for b in resp.content if b.type == "text"))
+    mined = client.complete_json(system, f"VERBATIMS:\n\n{blob}", MINING_SCHEMA, max_tokens=6000)
 
     for s in mined["slogan_candidates"]:
         s["real_corpus_echoes"] = corpus_echo(s["slogan"])

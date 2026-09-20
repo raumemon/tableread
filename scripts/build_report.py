@@ -87,6 +87,10 @@ def main():
     intent = Counter(r["answers"]["would_try_within_month"] for r in results)
     intent_score = sum(INTENT_WEIGHT[k] * v for k, v in intent.items()) / n
     prices = [r["answers"]["expected_price"] for r in results if r["answers"].get("expected_price")]
+    weekly = [r["answers"]["price_for_weekly_habit"] for r in results
+              if r["answers"].get("price_for_weekly_habit")]
+    monthly = [r["answers"]["price_for_monthly_habit"] for r in results
+               if r["answers"].get("price_for_monthly_habit")]
     turnoffs = [(r["answers"]["biggest_turnoff"], r["persona"]) for r in results]
     suggestions = Counter()
     for r in results:
@@ -102,7 +106,40 @@ def main():
     if prices:
         body.append(f"<div class=tile><div class=big>${stats.median(prices):.0f}</div>"
                     f"median expected price<br><small>({html.escape(str(concept.get('price_probe', '')))})</small></div>")
+    if weekly:
+        wk = sorted(weekly)
+        body.append(f"<div class=tile><div class=big>${stats.median(wk):.0f}</div>"
+                    f"median price for a WEEKLY habit<br>"
+                    f"<small>{len(wk)}/{n} would ever go weekly; would-not-goers excluded</small></div>")
+    if monthly:
+        mo = sorted(monthly)
+        body.append(f"<div class=tile><div class=big>${stats.median(mo):.0f}</div>"
+                    f"median price for a MONTHLY habit<br>"
+                    f"<small>{len(mo)}/{n} would ever go monthly+</small></div>")
     body.append("</div>")
+
+    # Importance questions (concept-specific features, rated 1-10)
+    imp = defaultdict(list)
+    imp_comments = defaultdict(list)
+    for r in results:
+        for ir in r["answers"].get("importance_ratings", []):
+            imp[ir["item"]].append(ir["score"])
+            imp_comments[ir["item"]].append((ir["score"], ir["comment"], r["persona"]))
+    if imp:
+        body.append("<h2>Feature importance</h2><table><tr><th>Feature</th><th>Mean /10</th>"
+                    "<th>Dealbreaker-ish (8+)</th><th>Don't care (&le;3)</th></tr>")
+        for item, scores in sorted(imp.items(), key=lambda kv: -stats.mean(kv[1])):
+            body.append(f"<tr><td>{html.escape(item)}</td>"
+                        f"<td>{stats.mean(scores):.1f} {bar(stats.mean(scores) / 10)}</td>"
+                        f"<td>{sum(1 for s in scores if s >= 8) / len(scores):.0%}</td>"
+                        f"<td>{sum(1 for s in scores if s <= 3) / len(scores):.0%}</td></tr>")
+        body.append("</table><div class=quotes>")
+        for item, cs in imp.items():
+            hi = max(imp_comments[item], key=lambda x: x[0])
+            body.append(f'<blockquote>&ldquo;{html.escape(hi[1])}&rdquo;'
+                        f'<footer>on {html.escape(item)} ({hi[0]}/10) — {hi[2]["age"]}yo, '
+                        f'{html.escape(hi[2]["archetype"])}</footer></blockquote>')
+        body.append("</div>")
 
     for title, field in [("Names", "name_ratings"), ("Slogans", "slogan_ratings"),
                          ("Packaging", "packaging_ratings")]:

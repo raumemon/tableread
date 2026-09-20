@@ -18,6 +18,12 @@ name_options:
 slogan_options: []
 packaging_options: []
 
+importance_questions:
+  - "fresh-made sauces (made in house, not from a jar)"
+  - "fresh-made falafel (formed and fried to order, not frozen)"
+  - "rice as an option for a bowl (instead of pita/fries only)"
+habit_price_questions: true
+
 notes: >
   Round 1 is a pure name test. Slogan candidates can be mined from this
   run's verbatims (scripts/mine_language.py) and tested in round 2.

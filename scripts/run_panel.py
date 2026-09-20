@@ -1,8 +1,9 @@
 """Run a concept test across the synthetic panel.
 
 Each persona answers a structured survey about the concept's branding variants
-(names, slogans, packaging). The concept + survey framing lives in the system
-prompt under a cache breakpoint, so 100 calls pay for it roughly once.
+(names, slogans, packaging) plus any concept-specific questions:
+  importance_questions:  list of features rated 1-10 for importance, with comment
+  habit_price_questions: asks the price at which they'd eat here >1x/week and >1x/month
 
 Usage:
   run_panel.py concepts/gyro-shop.yaml            # full panel
@@ -14,19 +15,11 @@ import os
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-import anthropic
 import yaml
 
-MODEL = "claude-sonnet-5"
+from llm import LLM, MODEL
+
 PERSONAS_PATH = "data/personas.json"
-
-
-def load_env():
-    if os.path.exists(".env"):
-        for line in open(".env"):
-            if "=" in line and not line.startswith("#"):
-                k, v = line.strip().split("=", 1)
-                os.environ.setdefault(k, v)
 
 
 def survey_schema(concept):
@@ -57,28 +50,50 @@ def survey_schema(concept):
         props["slogan_ratings"] = {"type": "array", "items": variant_rating}
     if concept.get("packaging_options"):
         props["packaging_ratings"] = {"type": "array", "items": variant_rating}
-    return {
-        "type": "object",
-        "properties": props,
-        "required": list(props),
-        "additionalProperties": False,
-    }
+    if concept.get("importance_questions"):
+        props["importance_ratings"] = {
+            "type": "array",
+            "description": "One entry per listed feature: how much it matters TO YOU (1=don't care, 10=dealbreaker), with a comment in your voice",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "item": {"type": "string"},
+                    "score": {"type": "integer", "minimum": 1, "maximum": 10},
+                    "comment": {"type": "string"},
+                },
+                "required": ["item", "score", "comment"],
+                "additionalProperties": False,
+            },
+        }
+    if concept.get("habit_price_questions"):
+        props["price_for_weekly_habit"] = {
+            "type": "number",
+            "description": ("The per-order price at which you would REALISTICALLY eat here more "
+                            "than once a week, given your actual budget and habits. If no price "
+                            "would make you a weekly regular, answer 0.")}
+        props["price_for_monthly_habit"] = {
+            "type": "number",
+            "description": ("The per-order price at which you'd eat here more than once a month. "
+                            "If you'd basically never come back regardless of price, answer 0.")}
+    return {"type": "object", "properties": props, "required": list(props),
+            "additionalProperties": False}
 
 
-def concept_system(concept, archetypes_by_key):
-    lines = [
+def concept_system(concept):
+    return "\n".join([
         "You are role-playing a specific real resident of the Spokane WA / Coeur d'Alene ID area",
         "responding to a local market research survey about a new restaurant concept. Stay fully",
         "in character: react with this person's tastes, budget, skepticism, and local reference",
         "points. Not every persona is excited about new restaurants; honest indifference and",
         "criticism are more valuable than politeness. Judge names/slogans/packaging like a real",
-        "person scrolling past them, not like a marketer. Use the persona's own voice in free-text",
-        "answers, informed by how locals actually write (voice quotes provided).",
+        "person scrolling past them, not like a marketer. Importance and price answers must",
+        "reflect the persona's actual budget, household, and eating habits — a parent of three",
+        "on $45k answers differently than a single foodie on $95k. Use the persona's own voice",
+        "in free-text answers, informed by how locals actually write (voice quotes provided).",
         "",
         "THE CONCEPT BEING TESTED:",
         json.dumps({k: v for k, v in concept.items() if k != "notes"}, indent=1),
-    ]
-    return [{"type": "text", "text": "\n".join(lines), "cache_control": {"type": "ephemeral"}}]
+    ])
 
 
 def persona_prompt(p, arch):
@@ -99,25 +114,15 @@ def persona_prompt(p, arch):
         f"- How locals like you actually write (real excerpts):\n"
         + "\n".join(f"  > {q[:300]}" for q in p["voice_quotes"])
         + "\n\nComplete the survey about the concept described in your instructions. "
-          "Rate every listed option. Be specific about WHY in each reaction — and let your "
-          "own circumstances (household, schedule, diet, familiarity) drive the answer, not "
-          "a generic consumer's."
+          "Rate every listed option and every listed feature. Be specific about WHY in each "
+          "reaction — and let your own circumstances (household, schedule, diet, familiarity) "
+          "drive the answer, not a generic consumer's."
     )
 
 
 def run_one(client, system, schema, p, arch):
-    response = client.messages.create(
-        model=MODEL,
-        max_tokens=3000,
-        system=system,
-        messages=[{"role": "user", "content": persona_prompt(p, arch)}],
-        output_config={"format": {"type": "json_schema", "schema": schema}},
-    )
-    text = next(b.text for b in response.content if b.type == "text")
-    return {"persona_id": p["id"], "persona": p, "answers": json.loads(text),
-            "usage": {"in": response.usage.input_tokens, "out": response.usage.output_tokens,
-                      "cache_read": response.usage.cache_read_input_tokens or 0,
-                      "cache_write": response.usage.cache_creation_input_tokens or 0}}
+    answers = client.complete_json(system, persona_prompt(p, arch), schema, max_tokens=3000)
+    return {"persona_id": p["id"], "persona": p, "answers": answers}
 
 
 def main():
@@ -127,39 +132,33 @@ def main():
     ap.add_argument("--workers", type=int, default=6)
     args = ap.parse_args()
 
-    load_env()
-    client = anthropic.Anthropic()
+    client = LLM()
+    print(f"provider: {client.provider}, model: {MODEL}")
     concept = yaml.safe_load(open(args.concept))
     panel = json.load(open(PERSONAS_PATH))
     archetypes = {a["key"]: a for a in panel["archetypes"]}
     personas = panel["personas"][: args.limit] if args.limit else panel["personas"]
 
-    system = concept_system(concept, archetypes)
+    system = concept_system(concept)
     schema = survey_schema(concept)
 
-    # Warm the cache with one sequential call, then fan out.
     results, errors = [], []
-    first = run_one(client, system, schema, personas[0], archetypes[personas[0]["archetype"]])
-    results.append(first)
-    print(f"1/{len(personas)} (cache write {first['usage']['cache_write']} tokens)")
-
     with ThreadPoolExecutor(max_workers=args.workers) as ex:
         futs = {ex.submit(run_one, client, system, schema, p, archetypes[p["archetype"]]): p
-                for p in personas[1:]}
+                for p in personas}
         for fut in as_completed(futs):
             p = futs[fut]
             try:
                 results.append(fut.result())
-                print(f"{len(results)}/{len(personas)}")
+                if len(results) % 10 == 0 or len(results) == len(personas):
+                    print(f"{len(results)}/{len(personas)}")
             except Exception as e:
                 errors.append({"persona_id": p["id"], "error": str(e)})
                 print(f"FAIL {p['id']}: {e}")
 
-    tot_in = sum(r["usage"]["in"] for r in results)
-    tot_out = sum(r["usage"]["out"] for r in results)
-    tot_cached = sum(r["usage"]["cache_read"] for r in results)
-    cost = tot_in / 1e6 * 2.00 + tot_out / 1e6 * 10.00 + tot_cached / 1e6 * 0.20
-    print(f"\ntokens: {tot_in} in, {tot_cached} cached-read, {tot_out} out — est ${cost:.2f}")
+    results.sort(key=lambda r: r["persona_id"])
+    cost = client.cost()
+    print(f"\nusage: {client.usage} — est ${cost:.2f}")
 
     os.makedirs("data/results", exist_ok=True)
     slug = os.path.splitext(os.path.basename(args.concept))[0]

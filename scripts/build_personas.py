@@ -16,23 +16,14 @@ import os
 import random
 import re
 
-import anthropic
+from llm import LLM, MODEL
 
 ACS_PATH = os.path.expanduser("~/projects/site-scout/data/acs_blockgroups.json")
 CORPUS_DIR = "data/corpus"
 OUT_PATH = "data/personas.json"
-MODEL = "claude-sonnet-5"
 SEED = 47
 
 COUNTY_AREA = {"53063": "Spokane", "16055": "Coeur d'Alene / Post Falls"}
-
-
-def load_env():
-    if os.path.exists(".env"):
-        for line in open(".env"):
-            if "=" in line and not line.startswith("#"):
-                k, v = line.strip().split("=", 1)
-                os.environ.setdefault(k, v)
 
 
 WORK = [("full-time, office/desk job", 32), ("full-time, on your feet (retail/healthcare/trades)", 30),
@@ -157,10 +148,7 @@ ARCHETYPE_SCHEMA = {
 
 def mine_archetypes(client, corpus):
     corpus_text = "\n---\n".join(f"[r/{it['sub']}, score {it['score']}] {it['text']}" for it in corpus)
-    response = client.messages.create(
-        model=MODEL,
-        max_tokens=8000,
-        system=(
+    system = (
             "You are a consumer insights researcher segmenting the dining public of the "
             "Spokane WA / Coeur d'Alene ID corridor. You are given real Reddit posts and "
             "comments from locals discussing restaurants, food, prices, and vibes. Derive "
@@ -178,14 +166,10 @@ def mine_archetypes(client, corpus):
             "colorful; these get randomly attached to survey personas to make reactions "
             "individual, so they must be things that would plausibly color how someone "
             "judges a new restaurant."
-        ),
-        messages=[{"role": "user", "content": f"Local corpus:\n\n{corpus_text}"}],
-        output_config={"format": {"type": "json_schema", "schema": ARCHETYPE_SCHEMA}},
     )
-    text = next(b.text for b in response.content if b.type == "text")
-    usage = response.usage
-    print(f"archetype mining: {usage.input_tokens} in / {usage.output_tokens} out tokens")
-    data = json.loads(text)
+    data = client.complete_json(system, f"Local corpus:\n\n{corpus_text}",
+                                ARCHETYPE_SCHEMA, max_tokens=8000)
+    print(f"archetype mining usage: {client.usage}")
     return data["archetypes"], data["life_details"]
 
 
@@ -208,9 +192,9 @@ def main():
     ap.add_argument("-n", type=int, default=300, help="panel size")
     args = ap.parse_args()
 
-    load_env()
     rng = random.Random(SEED)
-    client = anthropic.Anthropic()
+    client = LLM()
+    print(f"provider: {client.provider}, model: {MODEL}")
 
     corpus = load_corpus_sample()
     print(f"corpus sample: {len(corpus)} items")

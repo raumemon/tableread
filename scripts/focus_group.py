@@ -22,18 +22,9 @@ import json
 import os
 import time
 
-import anthropic
+from llm import LLM, MODEL
 
-MODEL = "claude-sonnet-5"
 ROUNDS = 3
-
-
-def load_env():
-    if os.path.exists(".env"):
-        for line in open(".env"):
-            if "=" in line and not line.startswith("#"):
-                k, v = line.strip().split("=", 1)
-                os.environ.setdefault(k, v)
 
 
 def find_rating(answers, option):
@@ -82,8 +73,7 @@ def speak(client, system, transcript, name):
     msgs = [{"role": "user", "content":
              ("DISCUSSION SO FAR:\n" + "\n".join(transcript) if transcript else "The discussion is starting.")
              + f"\n\nThe moderator has asked for your response now, {name}. Reply in character."}]
-    resp = client.messages.create(model=MODEL, max_tokens=400, system=system, messages=msgs)
-    return next(b.text for b in resp.content if b.type == "text").strip()
+    return client.complete_text(system, msgs[0]["content"], max_tokens=400)
 
 
 def moderate(client, concept, option, topic, transcript, round_no, total_rounds):
@@ -95,21 +85,18 @@ def moderate(client, concept, option, topic, transcript, round_no, total_rounds)
         f"This is round {round_no} of {total_rounds}"
         + ("; start wrapping toward what would actually change their behavior." if round_no == total_rounds else ".")
     )
-    msgs = [{"role": "user", "content": "DISCUSSION SO FAR:\n" + ("\n".join(transcript) or "(none)")
-             + "\n\nYour next moderator prompt:"}]
-    resp = client.messages.create(model=MODEL, max_tokens=250, system=system, messages=msgs)
-    return next(b.text for b in resp.content if b.type == "text").strip()
+    user = ("DISCUSSION SO FAR:\n" + ("\n".join(transcript) or "(none)")
+            + "\n\nYour next moderator prompt:")
+    return client.complete_text(system, user, max_tokens=250)
 
 
 def synthesize(client, transcript, option, topic):
-    resp = client.messages.create(
-        model=MODEL, max_tokens=1500,
-        system=("You are a senior insights researcher. Write a tight synthesis of this focus "
-                "group / interview transcript: 3-5 themes with supporting quotes, points of "
-                "disagreement, and concrete recommended changes. No fluff."),
-        messages=[{"role": "user", "content": f"Option: {option}\nResearch question: {topic}\n\n"
-                   + "\n".join(transcript)}])
-    return next(b.text for b in resp.content if b.type == "text").strip()
+    return client.complete_text(
+        "You are a senior insights researcher. Write a tight synthesis of this focus "
+        "group / interview transcript: 3-5 themes with supporting quotes, points of "
+        "disagreement, and concrete recommended changes. No fluff.",
+        f"Option: {option}\nResearch question: {topic}\n\n" + "\n".join(transcript),
+        max_tokens=1500)
 
 
 def main():
@@ -123,8 +110,8 @@ def main():
     ap.add_argument("--rounds", type=int, default=ROUNDS)
     args = ap.parse_args()
 
-    load_env()
-    client = anthropic.Anthropic()
+    client = LLM()
+    print(f"provider: {client.provider}, model: {MODEL}")
     data = json.load(open(args.run))
     concept = data["concept"]
     panel = json.load(open("data/personas.json"))
