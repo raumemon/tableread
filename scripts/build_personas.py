@@ -35,6 +35,26 @@ def load_env():
                 os.environ.setdefault(k, v)
 
 
+WORK = [("full-time, office/desk job", 32), ("full-time, on your feet (retail/healthcare/trades)", 30),
+        ("shift work, irregular hours", 10), ("self-employed / small business", 8),
+        ("student (part-time work)", 6), ("retired", 9), ("between jobs / gig work", 5)]
+DIET = [("none", 78), ("vegetarian-ish, flexible", 6), ("gluten-free household member", 5),
+        ("watching cholesterol/sodium", 7), ("halal-preferring", 1), ("low-carb most of the time", 3)]
+
+
+def household_for(age, renter, rng):
+    if age < 30:
+        opts = [("lives with roommates", 30), ("lives alone", 25), ("couple, no kids", 30),
+                ("young kids at home", 15)]
+    elif age < 50:
+        opts = [("kids at home who veto restaurants", 38), ("couple, no kids", 27),
+                ("lives alone", 20), ("teenagers at home", 15)]
+    else:
+        opts = [("empty nester couple", 45), ("lives alone", 30),
+                ("adult kid back home", 10), ("grandkids visit on weekends", 15)]
+    return rng.choices([o for o, _ in opts], weights=[w for _, w in opts], k=1)[0]
+
+
 def sample_demographics(n, rng):
     acs = json.load(open(ACS_PATH))
     bgs = [(geoid, d) for geoid, d in acs.items() if (d.get("population") or 0) > 0]
@@ -48,13 +68,21 @@ def sample_demographics(n, rng):
         income = d.get("median_hh_income") or 65000
         income = max(15000, int(rng.gauss(income, income * 0.35)))
         renter_share = (d.get("renter_households") or 0) / max(d.get("total_households") or 1, 1)
+        renter = rng.random() < renter_share
+        work = "retired" if age >= 68 else rng.choices(
+            [w for w, _ in WORK], weights=[wt for _, wt in WORK], k=1)[0]
         people.append({
             "id": f"p{i:03d}",
             "block_group": geoid,
             "area": COUNTY_AREA.get(geoid[:5], "Spokane"),
             "age": age,
             "household_income": income,
-            "renter": rng.random() < renter_share,
+            "renter": renter,
+            "household": household_for(age, renter, rng),
+            "work": work,
+            "diet": rng.choices([dd for dd, _ in DIET], weights=[w for _, w in DIET], k=1)[0],
+            # 0-2: never had the cuisine being tested; 3-5: occasional; 6-9: knows it well
+            "cuisine_familiarity": rng.choices(range(10), weights=[8, 8, 10, 14, 14, 12, 12, 10, 7, 5], k=1)[0],
         })
     return people
 
@@ -104,9 +132,14 @@ ARCHETYPE_SCHEMA = {
                              "prevalence_pct", "age_skew", "income_skew", "voice_notes", "grounding_quotes"],
                 "additionalProperties": False,
             },
-        }
+        },
+        "life_details": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "40-60 short, concrete, corpus-grounded life details a local might have",
+        },
     },
-    "required": ["archetypes"],
+    "required": ["archetypes", "life_details"],
     "additionalProperties": False,
 }
 
@@ -126,7 +159,14 @@ def mine_archetypes(client, corpus):
             "grounding_quotes must be verbatim excerpts (or near-verbatim trims) from the "
             "corpus, 2-4 per archetype. voice_notes describes how this person writes and "
             "talks (register, slang, reference points). Include unglamorous segments "
-            "(chain loyalists, rarely-eats-out) at honest prevalence, not just foodies."
+            "(chain loyalists, rarely-eats-out) at honest prevalence, not just foodies. "
+            "Also produce life_details: 40-60 short concrete life circumstances grounded in "
+            "the corpus and local geography (e.g. 'commutes to Fairchild AFB', 'kid plays "
+            "club soccer, eats dinner in the car twice a week', 'moved here from Seattle in "
+            "2021', 'worked in restaurants through college'). Specific and mundane beats "
+            "colorful; these get randomly attached to survey personas to make reactions "
+            "individual, so they must be things that would plausibly color how someone "
+            "judges a new restaurant."
         ),
         messages=[{"role": "user", "content": f"Local corpus:\n\n{corpus_text}"}],
         output_config={"format": {"type": "json_schema", "schema": ARCHETYPE_SCHEMA}},
@@ -134,7 +174,8 @@ def mine_archetypes(client, corpus):
     text = next(b.text for b in response.content if b.type == "text")
     usage = response.usage
     print(f"archetype mining: {usage.input_tokens} in / {usage.output_tokens} out tokens")
-    return json.loads(text)["archetypes"]
+    data = json.loads(text)
+    return data["archetypes"], data["life_details"]
 
 
 def assign_archetype(person, archetypes, rng):
@@ -153,7 +194,7 @@ def assign_archetype(person, archetypes, rng):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("-n", type=int, default=100, help="panel size")
+    ap.add_argument("-n", type=int, default=300, help="panel size")
     args = ap.parse_args()
 
     load_env()
@@ -162,8 +203,8 @@ def main():
 
     corpus = load_corpus_sample()
     print(f"corpus sample: {len(corpus)} items")
-    archetypes = mine_archetypes(client, corpus)
-    print(f"archetypes: {[a['name'] for a in archetypes]}")
+    archetypes, life_details = mine_archetypes(client, corpus)
+    print(f"archetypes: {[a['name'] for a in archetypes]}; {len(life_details)} life details")
 
     quote_pool = [it["text"] for it in corpus if it["score"] >= 3]
     people = sample_demographics(args.n, rng)
@@ -171,6 +212,7 @@ def main():
         arch = assign_archetype(p, archetypes, rng)
         p["archetype"] = arch["key"]
         p["voice_quotes"] = rng.sample(quote_pool, k=min(3, len(quote_pool)))
+        p["life_details"] = rng.sample(life_details, k=min(2, len(life_details)))
 
     out = {"archetypes": archetypes, "personas": people, "seed": SEED}
     os.makedirs("data", exist_ok=True)

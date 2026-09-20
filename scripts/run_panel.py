@@ -81,17 +81,26 @@ def concept_system(concept, archetypes_by_key):
 
 
 def persona_prompt(p, arch):
+    fam = p.get("cuisine_familiarity", 5)
+    fam_desc = ("you've basically never eaten this kind of food" if fam <= 2
+                else "you've had this kind of food occasionally" if fam <= 5
+                else "you know this kind of food well and have opinions")
     return (
         f"YOUR PERSONA:\n"
         f"- Age {p['age']}, household income ~${p['household_income']:,}, "
         f"{'renter' if p['renter'] else 'homeowner'}, lives in {p['area']}\n"
+        f"- Household: {p.get('household', 'n/a')}. Work: {p.get('work', 'n/a')}.\n"
+        f"- Diet: {p.get('diet', 'none')}. Familiarity with this concept's cuisine: {fam_desc}.\n"
+        f"- Life details that color your reactions: {'; '.join(p.get('life_details', []))}\n"
         f"- Dining archetype: {arch['name']} — {arch['description']} "
         f"Habits: {arch['dining_habits']} Price sensitivity: {arch['price_sensitivity']}.\n"
         f"- Voice notes: {arch['voice_notes']}\n"
         f"- How locals like you actually write (real excerpts):\n"
         + "\n".join(f"  > {q[:300]}" for q in p["voice_quotes"])
         + "\n\nComplete the survey about the concept described in your instructions. "
-          "Rate every listed option. Be specific about WHY in each reaction."
+          "Rate every listed option. Be specific about WHY in each reaction — and let your "
+          "own circumstances (household, schedule, diet, familiarity) drive the answer, not "
+          "a generic consumer's."
     )
 
 
