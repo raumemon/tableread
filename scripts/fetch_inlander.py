@@ -18,7 +18,7 @@ import requests
 UA = {"User-Agent": "Mozilla/5.0 (Macintosh) tableread-research/0.1 (local market research)"}
 SECTIONS = {
     "2026": ["fooddrink", "drinklocalnightlife"],
-    "2025": ["fooddrink", "drinklocalnightlife"],
+    "2025": ["food", "nightlife"],
 }
 
 
@@ -43,6 +43,28 @@ def parse(page_html):
     return out
 
 
+def parse_2025(page_html, year, sec):
+    """2025 layout: winner cards linking to articles whose kicker is the category."""
+    links = sorted(set(re.findall(rf'href="(/bestof/{year}/{sec}/[^"]+/article_[^"]+\.html)"', page_html)))
+    out = []
+    for link in links:
+        try:
+            r = requests.get(f"https://www.inlander.com{link}", timeout=30, headers=UA)
+            r.raise_for_status()
+            kick = re.search(r'class="kicker[^>]*>\s*(?:<[^>]+>)*([^<]+)', r.text)
+            head = re.search(r'"headline"\s*:\s*"([^"]+)"', r.text) or \
+                   re.search(r'<h1[^>]*>(.*?)</h1>', r.text, re.S)
+            category = clean(kick.group(1)) if kick else ""
+            winner = clean(head.group(1)) if head else ""
+            if winner:
+                out.append({"category": category or "(uncategorized)", "winner": winner,
+                            "runners_up": ""})
+        except Exception as e:
+            print(f"  article FAIL {link[-40:]}: {e}")
+        time.sleep(0.7)
+    return out
+
+
 def main():
     results = {}
     for year, sections in SECTIONS.items():
@@ -52,6 +74,8 @@ def main():
                 r = requests.get(url, timeout=30, headers=UA)
                 r.raise_for_status()
                 entries = parse(r.text)
+                if not entries:
+                    entries = parse_2025(r.text, year, sec)
                 results[f"{year}/{sec}"] = entries
                 print(f"{year}/{sec}: {len(entries)} categories")
             except Exception as e:

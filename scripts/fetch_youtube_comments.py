@@ -23,6 +23,9 @@ QUERIES = [
     "Spokane restaurants", "Spokane food review", "best food Spokane",
     "Coeur d'Alene restaurants", "Spokane Washington living", "moving to Spokane",
     "downtown Spokane", "Spokane cost of living", "Spokane Valley food",
+    # targeted channels (agent-verified local comment ecosystems)
+    "Katina Eats Kilos Spokane", "Katina Eats Kilos challenge Post Falls",
+    "KREM 2 Spokane restaurant", "KXLY Spokane food", "inlandNWeats",
 ]
 VIDEOS_PER_QUERY = 6
 COMMENTS_PER_VIDEO = 60

@@ -66,6 +66,22 @@ repeated runs, not fake confidence intervals. NOT a substitute for: taste
 tests, final go/no-go on big spends, or anything where you can cheaply ask 20
 real locals. Screen synthetic, confirm human.
 
+## Data source backlog (free, verified 2026-09-20)
+
+- GSI "The Pulse" poll: PDFs + extracted text in data/reference/ — wire the
+  attitude crosstabs (downtown safety, cost-of-living anxiety by demo) into
+  persona construction as attitudinal priors.
+- CDA Press "Best of North Idaho": 19-year reader poll; ballot pages need a
+  headless render (Second Street platform). The Idaho-side Inlander analog.
+- Spokane Trends (spokanetrends.org): objective county indicators, plain HTML.
+- Spokesman-Review letters to the editor: real locals on downtown/cost of
+  living; plain HTML, modest daily volume.
+- City-Data Spokane forum: great verbatims but bot-blocked (429) and dated —
+  manual copy-paste into data/corpus_manual/ only.
+- Verified dead ends (don't chase): station viewer polls (none exist),
+  Spokesman/Inlander comment sections (removed), CDA Press site polls (stale),
+  Idaho's Best (Treasure Valley only).
+
 ## Upgrade roadmap (paid, in rough order of value)
 
 - **Google review text via Apify** (~$5-15/geo within the $50 Apify budget):
