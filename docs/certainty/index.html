@@ -1,0 +1,115 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The Price of Certainty</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700;800&display=swap">
+<style>
+:root{
+  --ground:#E9E8E4; --card:#FCFCFB; --ink:#2C2C2E; --sub:#77756F; --hair:#D2D1CB;
+  --head-bg:#37373A; --head-ink:#F4F3F0; --head-sub:#A8A6A1;
+  --data:#37373A; --data-soft:#D8D7D2; --neg:#8F3B36; --pos:#4C6350;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#242426; --card:#2F2F32; --ink:#EDECE9; --sub:#9C9A94; --hair:#3F3F43;
+    --head-bg:#1C1C1E; --head-ink:#F4F3F0; --head-sub:#A8A6A1;
+    --data:#C9C8C3; --data-soft:#3F3F43; --neg:#C97A72; --pos:#93AC8F;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#242426; --card:#2F2F32; --ink:#EDECE9; --sub:#9C9A94; --hair:#3F3F43;
+  --head-bg:#1C1C1E; --head-ink:#F4F3F0; --head-sub:#A8A6A1;
+  --data:#C9C8C3; --data-soft:#3F3F43; --neg:#C97A72; --pos:#93AC8F;
+}
+body{background:var(--ground); color:var(--ink);
+  font:15.5px/1.6 "Libre Franklin",system-ui,sans-serif; margin:0; padding-block:0 5rem; padding-inline:0;}
+.band{background:var(--head-bg); color:var(--head-ink); padding:4.2rem 24px 3.6rem;}
+.band-inner, main{max-width:880px; margin:0 auto;}
+main{padding-inline:24px;}
+h1{font-weight:800; font-size:clamp(1.9rem,5vw,2.8rem); margin:0 0 .9rem; letter-spacing:-.02em; text-wrap:balance;}
+.band .meta{color:var(--head-sub); font-size:.9rem; max-width:60ch;}
+.band .meta b{color:var(--head-ink); font-weight:500;}
+h2{font-weight:700; font-size:1.3rem; letter-spacing:-.01em; margin:3.4rem 0 1.1rem; text-wrap:balance;}
+.tiles{display:flex; gap:1px; flex-wrap:wrap; margin:-2.2rem auto 0; max-width:880px; padding-inline:24px;}
+.tile{background:var(--card); border:1px solid var(--hair); padding:20px 22px; flex:1 1 170px; min-width:0;}
+.tile+.tile{border-left:none;}
+.tile .big{font-weight:700; font-size:2rem; line-height:1.05; letter-spacing:-.02em; font-variant-numeric:tabular-nums;}
+.tile .lbl{font-size:.8rem; color:var(--sub); margin-top:4px;}
+.note{border-left:2px solid var(--ink); padding:2px 0 2px 18px; margin:1.6rem 0; font-size:.95rem; max-width:64ch;}
+table{border-collapse:collapse; width:100%; font-size:.9rem; background:var(--card);}
+td,th{border:1px solid var(--hair); padding:10px 14px; text-align:left; vertical-align:top;}
+th{font-size:.72rem; letter-spacing:.12em; text-transform:uppercase; color:var(--sub); font-weight:600;}
+td.n{font-variant-numeric:tabular-nums; white-space:nowrap;}
+.bar{background:var(--data-soft); height:10px; min-width:60px; display:inline-block; vertical-align:middle; width:160px;}
+.bar i{background:var(--data); height:10px; display:block;}
+p{max-width:70ch;}
+.small{font-size:.84rem; color:var(--sub); max-width:70ch;}
+.quotes blockquote{margin:0; background:var(--card); border:1px solid var(--hair); padding:16px 20px; font-size:.92rem;}
+.quotes blockquote+blockquote{border-top:none;}
+.quotes footer{color:var(--sub); font-size:.78rem; margin-top:8px; font-style:normal;}
+.q{background:var(--card); border:1px solid var(--hair); padding:18px 22px; margin:.8rem 0; font-size:.92rem;}
+.q b{display:block; margin-bottom:4px;}
+.method{font-size:.85rem; color:var(--sub); border-top:1px solid var(--hair); margin-top:3.4rem; padding-top:1.4rem; max-width:76ch;}
+a{color:inherit;}
+</style></head><body>
+<div class="band"><div class="band-inner">
+<h1>The Price of Certainty</h1>
+<p class="meta">Would you trade your eyesight for a guaranteed answer to whether God exists?<br>
+<b>300 synthetic personas</b> of the Spokane / Coeur d'Alene corridor &middot; Census-grounded demographics with modeled religiosity &middot; September 20, 2026 &middot; a <a href="../">TableRead</a> study, built to be replicated with real people</p>
+</div></div>
+
+<div class="tiles">
+  <div class="tile"><div class="big">0%</div><div class="lbl">accept the baseline: certainty about God, at the cost of permanent blindness</div></div>
+  <div class="tile"><div class="big">56%</div><div class="lbl">accept when the price is ten years of life instead of sight</div></div>
+  <div class="tile"><div class="big">38%</div><div class="lbl">wouldn't pay any real price at all for the answer</div></div>
+</div>
+
+<main>
+<h2>The wager</h2>
+<p>A procedure guarantees a certain answer to whether God exists — no deception, no error. Immediately afterward, you permanently lose your sight. You gain nothing else: no heaven, money, or longer life. Only the answer. <b>Not one of 300 personas accepted</b> — 94% "probably refuse," 6% "definitely refuse" — and religiosity, the covariate that should matter most, moved nothing: the devout and the atheists refused at identical rates.</p>
+
+<h2>But the variants reveal what the refusal is actually about</h2>
+<table>
+<tr><th>Variant</th><th>Accept</th><th></th></tr>
+<tr><td>Baseline — sight for certainty about God</td><td class="n">0.0%</td><td><span class="bar"><i style="width:0%"></i></span></td></tr>
+<tr><td>One-sided — you only learn the answer if God exists</td><td class="n">2.0%</td><td><span class="bar"><i style="width:2%"></i></span></td></tr>
+<tr><td>Unprovable — you know, but can never convince anyone</td><td class="n">0.7%</td><td><span class="bar"><i style="width:1%"></i></span></td></tr>
+<tr><td>Fading — the knowledge fades after a year; blindness stays</td><td class="n">0.3%</td><td><span class="bar"><i style="width:1%"></i></span></td></tr>
+<tr><td>Afterlife — the question is "is there an afterlife?" instead</td><td class="n">4.1%</td><td><span class="bar"><i style="width:4%"></i></span></td></tr>
+<tr><td><b>Ten years — same answer, ten years of life instead of sight</b></td><td class="n"><b>56.2%</b></td><td><span class="bar"><i style="width:56%"></i></span></td></tr>
+</table>
+<div class="note"><b>The finding:</b> this population isn't refusing certainty — it's refusing <i>blindness specifically</i>. Swap the identical metaphysical payoff to a decade of lifespan and a majority takes the deal. Sight prices out above ten years of life.</div>
+
+<h2>The maximum price ladder</h2>
+<table>
+<tr><th>"The most I'd actually pay for the answer"</th><th>Share</th><th></th></tr>
+<tr><td>Nothing — no real price</td><td class="n">38.0%</td><td><span class="bar"><i style="width:38%"></i></span></td></tr>
+<tr><td>A finger</td><td class="n">5.3%</td><td><span class="bar"><i style="width:5%"></i></span></td></tr>
+<tr><td>My sense of taste</td><td class="n">2.0%</td><td><span class="bar"><i style="width:2%"></i></span></td></tr>
+<tr><td>Ten years of my life</td><td class="n">53.3%</td><td><span class="bar"><i style="width:53%"></i></span></td></tr>
+<tr><td>My eyesight</td><td class="n">0.0%</td><td><span class="bar"><i style="width:0%"></i></span></td></tr>
+<tr><td>My remaining lifespan — die knowing</td><td class="n">0.0%</td><td><span class="bar"><i style="width:0%"></i></span></td></tr>
+</table>
+<p class="small">Panel religiosity (modeled from regional distributions): 77 evangelical Protestant, 47 Catholic, 27 mainline Protestant, 7 LDS, 12 other Christian, 12 other faiths, 63 spiritual-but-unaffiliated, 55 atheist/agnostic/secular. Current belief: 90 believe God exists, 116 lean toward existing, 46 genuinely unsure, 47 lean against or disbelieve.</p>
+
+<h2>In their words</h2>
+<div class="quotes">
+  <blockquote>&ldquo;I already have my testimony of God — I've felt the Spirit, I've prayed and gotten answers. Losing my sight would take away my ability to work and drive her to school.&rdquo;<footer>43, Latter-day Saint, medical billing specialist, single mother — refused; would pay nothing</footer></blockquote>
+  <blockquote>&ldquo;Ten years off a life I'm hopefully going to live a good long while is a real sacrifice, but it's one I could actually make and still function fully — still see, taste, work, enjoy things — right up until the end.&rdquo;<footer>34, secular, sales manager — max price: ten years</footer></blockquote>
+  <blockquote>&ldquo;I could see paying with time I've got less use for at this age, but I won't give up my eyes, my taste for Marilyn's cooking, or a finger for something my faith already gives me for free.&rdquo;<footer>76, mainline Protestant, retired Kaiser engineer — max price: ten years, reluctantly</footer></blockquote>
+</div>
+
+<h2>Replicate this with real people</h2>
+<p>These numbers are <b>locked predictions</b>, published before any human data was collected. The unanimous 0% is the most suspicious number here: synthetic respondents share one underlying model, and real populations have tails. If even a few humans in 40 accept the baseline, that gap measures the panel's conformity bias — which is exactly what this study exists to find out. Ask people these questions in this order (rotate 3&ndash;7 between respondents):</p>
+<div class="q"><b>1. The baseline.</b> A procedure will tell you with absolute certainty whether God exists — no deception or error possible. Immediately afterward, you permanently lose your sight. You gain nothing else — only the answer. Do you accept? (definitely accept / probably accept / probably refuse / definitely refuse) Why?</div>
+<div class="q"><b>2.</b> Which is closest to your current belief? (believe God exists / lean toward existing / genuinely unsure / lean toward not existing / believe God does not exist)</div>
+<div class="q"><b>3.</b> The procedure only works one way: if God exists you'll know; if not, you learn nothing — and still go blind. Accept?</div>
+<div class="q"><b>4.</b> Same deal, but you alone will know, and can never prove it to anyone. Accept?</div>
+<div class="q"><b>5.</b> The knowledge fades completely after one year; the blindness is permanent. Accept?</div>
+<div class="q"><b>6.</b> Same certain answer, but the price is ten years off the end of your life instead of your sight. Accept?</div>
+<div class="q"><b>7.</b> The question answered is instead: &ldquo;Is there an afterlife?&rdquo; — at the price of your sight. Accept?</div>
+<div class="q"><b>8. Maximum price.</b> Of these — nothing, a finger, your sense of taste, ten years of life, your eyesight, your remaining lifespan — what is the most you would actually pay for the certain answer? Why?</div>
+<p class="small">Record: age band, religious tradition, and how important faith is in your life (very / somewhat / not).</p>
+
+<div class="method">
+<b>Method.</b> 300 synthetic personas (demographics sampled from real Census ACS PUMS records for Spokane and Kootenai counties; religiosity modeled from regional distributions; occupations and life details resolved by an LLM coherence pass), answering in character via claude-sonnet-5 with structured outputs; variant order randomized per persona. Study cost: about $3.50. Known limitations, stated before human data exists: synthetic respondents share one model, so errors correlate — unanimity is evidence of model consensus, not population consensus; and religiosity here is modeled, not sampled from records. The human replication is the point. A <a href="../">TableRead</a> study.
+</div>
+</main></body></html>
