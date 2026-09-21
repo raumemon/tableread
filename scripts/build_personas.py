@@ -60,8 +60,13 @@ def sample_demographics(n, rng):
         income = max(15000, int(rng.gauss(income, income * 0.35)))
         renter_share = (d.get("renter_households") or 0) / max(d.get("total_households") or 1, 1)
         renter = rng.random() < renter_share
-        work = "retired" if age >= 68 else rng.choices(
-            [w for w, _ in WORK], weights=[wt for _, wt in WORK], k=1)[0]
+        if age >= 68:
+            work = "retired"
+        else:
+            # "retired" and "student" only at plausible ages
+            opts = [(w, wt) for w, wt in WORK
+                    if not (w == "retired" and age < 55) and not (w.startswith("student") and age > 30)]
+            work = rng.choices([w for w, _ in opts], weights=[wt for _, wt in opts], k=1)[0]
         people.append({
             "id": f"p{i:03d}",
             "block_group": geoid,

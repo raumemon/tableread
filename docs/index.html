@@ -61,6 +61,13 @@ th{font-size:.72rem; letter-spacing:.06em; text-transform:uppercase; color:var(-
 td.n{font-variant-numeric:tabular-nums; white-space:nowrap;}
 .small{font-size:.82rem; color:var(--muted);}
 .method{font-size:.85rem; color:var(--muted); border-top:1px solid var(--line); margin-top:3rem; padding-top:1.2rem;}
+.people{display:grid; grid-template-columns:repeat(auto-fit,minmax(310px,1fr)); gap:14px; margin:1.2rem 0;}
+.person{background:var(--tile); border-radius:10px; padding:16px 18px;}
+.person .who{font-weight:700; font-size:.95rem;}
+.person .tags{color:var(--muted); font-size:.78rem; margin:2px 0 8px;}
+.person q{display:block; font-size:.9rem; font-style:italic; border-left:2px solid var(--bar); padding-left:10px;}
+.comp{display:flex; flex-wrap:wrap; gap:8px 20px; font-size:.85rem; color:var(--muted); margin:.6rem 0 0;}
+.comp b{color:var(--ink); font-variant-numeric:tabular-nums;}
 @media (max-width:560px){ .namegrid{grid-template-columns:1fr auto auto;} .namegrid .track{display:none;} .namegrid .hd.trk{display:none;} }
 </style>
 <main>
@@ -129,6 +136,34 @@ td.n{font-variant-numeric:tabular-nums; white-space:nowrap;}
 <tr><td>&ldquo;Veggie options feel like an afterthought&rdquo;</td><td>Falafel / rice bowl on the main board, not a footnote</td></tr>
 <tr><td>&ldquo;Grab-and-go only — nowhere to linger&rdquo;</td><td>Even a few tables converts would-be regulars who want to be known there</td></tr>
 </table>
+
+<h2>The panel</h2>
+<p>Each participant is a persistent synthetic persona: demographics sampled from real Census block groups in the corridor, a dining psychographic mined from local Reddit discourse, a household, a job, a diet, and life details that shape how they answer. The same 300 people answer every round, so results are comparable across tests. Six of them, in their own words on this concept:</p>
+<div class="comp">
+  <span>Age: <b>105</b> under 35 · <b>147</b> 35–54 · <b>48</b> 55+</span>
+  <span>Area: <b>225</b> Spokane · <b>75</b> CDA / Post Falls</span>
+  <span>Top segments: <b>Local Scene Supporters</b> (60) · <b>Chain Loyalists</b> (55) · <b>Food Adventurers</b> (47) · <b>Price-Sensitive Families</b> (44)</span>
+</div>
+<div class="people">
+  <div class="person"><div class="who">21 · Spokane · night-shift nurse, Sacred Heart</div>
+    <div class="tags">young kids at home · ~$98k household · watching sodium · Social Scene Enthusiast</div>
+    <q>Open late on weekends is honestly kind of clutch for Spokane?? After night shifts at Sacred Heart I'm STARVING and there's like nothing open besides fast food&hellip; freshly made pita sounds legit, not like the sad gyro trucks that just squirt bottled tzatziki on everything.</q></div>
+  <div class="person"><div class="who">41 · Spokane · high-school basketball coach, between jobs</div>
+    <div class="tags">kids who veto restaurants · ~$55k · military family · Food Adventurer</div>
+    <q>Most &lsquo;Mediterranean&rsquo; places around Spokane are just reheating pre-cooked cones and calling it fresh. I've had proper doner in Germany when my dad was stationed there, so I'm picky&hellip; but $13&ndash;16 is steep when my kids will just want chicken tenders anyway.</q></div>
+  <div class="person"><div class="who">45 · Coeur d'Alene / Post Falls · on-her-feet full-timer</div>
+    <div class="tags">couple, no kids · ~$97k · watching cholesterol · Local Scene Supporter</div>
+    <q>The difference between jarred tzatziki and house-made is night and day. As long as this is a local operation and not some franchise coming in from out of state, I'm interested. Would love to know who's actually running it.</q></div>
+  <div class="person"><div class="who">23 · Spokane · retail full-time, training for Bloomsday</div>
+    <div class="tags">young kids at home · ~$40k · low-carb most of the time · Price-Sensitive Family</div>
+    <q>Kids like the meat if you skip the spicy sauce. But $13&ndash;16 for just a combo is steep when I'm feeding a family — that's basically what I'd spend on a whole meal at home for everyone.</q></div>
+  <div class="person"><div class="who">51 · Coeur d'Alene / Post Falls · shift worker</div>
+    <div class="tags">empty nester · ~$30k · never had a gyro · Chain Loyalist</div>
+    <q>Not really my usual thing, honestly&hellip; I'd probably need someone to explain the menu to me before I ordered. Late night on weekends is a good idea though since not much else is open around here that isn't fast food.</q></div>
+  <div class="person"><div class="who">50 · Spokane · gig work, commutes to Fairchild AFB</div>
+    <div class="tags">empty nester · ~$73k · rides the bus daily · Local Scene Supporter</div>
+    <q>Always room for a local spot if it's actually independent and not some franchise thing pretending to be local&hellip; is this an actual Spokane family doing this or some investor group slapping a trendy name on it?</q></div>
+</div>
 
 <div class="method">
 <b>Method &amp; honest caveats.</b> 300 synthetic personas: demographics sampled from Census ACS block groups (Spokane County WA + Kootenai County ID, population-weighted, reproducible seed), dining psychographics and voice mined from ~3,400 real posts and comments on r/Spokane and r/CoeurdAlene, surveys completed in-character by claude-sonnet-5 with structured outputs. Published validations put well-grounded synthetic panels at 85–95% agreement with human panels on <i>directional, linguistic</i> questions — names, claims, positioning — which is what this report contains. Synthetic panels are not a substitute for human research on taste, final pricing, or major-spend go/no-go decisions; errors are correlated across personas, so treat margins, not means, with confidence. Total research cost of this round: about $7.
