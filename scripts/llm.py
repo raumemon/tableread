@@ -49,7 +49,8 @@ class LLM:
         if os.environ.get("OPENAI_API_KEY"):
             from openai import OpenAI
             self.provider = "openai"
-            self.client = OpenAI()
+            # Hard 60s request timeout: a hung connection must die, not stall a run.
+            self.client = OpenAI(timeout=60.0, max_retries=2)
         else:
             import anthropic
             self.provider = "anthropic"

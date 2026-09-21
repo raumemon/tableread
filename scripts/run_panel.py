@@ -12,6 +12,7 @@ Usage:
 import argparse
 import json
 import os
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -144,37 +145,56 @@ def main():
     system = concept_system(concept)
     schema = survey_schema(concept)
 
-    results, errors = [], []
+    slug = os.path.splitext(os.path.basename(args.concept))[0]
+    ckpt_path = f"data/results/.checkpoint-{slug}.jsonl"
+    ckpt_lock = threading.Lock()
+
+    done = {}
     if args.resume:
         prev = json.load(open(args.resume))
-        done = {r["persona_id"]: r for r in prev["results"]}
-        results = list(done.values())
+        done.update({r["persona_id"]: r for r in prev["results"]})
+    # Checkpoint survives crashes/kills: every completed survey is a line here.
+    if os.path.exists(ckpt_path):
+        for line in open(ckpt_path):
+            r = json.loads(line)
+            done[r["persona_id"]] = r
+    results, errors = list(done.values()), []
+    if done:
         personas = [p for p in personas if p["id"] not in done]
-        print(f"resuming: {len(results)} already done, {len(personas)} to run")
+        print(f"resuming: {len(results)} already done, {len(personas)} to run", flush=True)
+
+    def checkpoint(r):
+        with ckpt_lock:
+            with open(ckpt_path, "a") as f:
+                f.write(json.dumps(r) + "\n")
     with ThreadPoolExecutor(max_workers=args.workers) as ex:
         futs = {ex.submit(run_one, client, system, schema, p, archetypes[p["archetype"]]): p
                 for p in personas}
+        total = len(done) + len(personas)
         for fut in as_completed(futs):
             p = futs[fut]
             try:
-                results.append(fut.result())
-                if len(results) % 10 == 0 or len(results) == len(personas):
-                    print(f"{len(results)}/{len(personas)}")
+                r = fut.result()
+                checkpoint(r)
+                results.append(r)
+                if len(results) % 10 == 0 or len(results) == total:
+                    print(f"{len(results)}/{total}", flush=True)
             except Exception as e:
                 errors.append({"persona_id": p["id"], "error": str(e)})
-                print(f"FAIL {p['id']}: {e}")
+                print(f"FAIL {p['id']}: {e}", flush=True)
 
     results.sort(key=lambda r: r["persona_id"])
     cost = client.cost()
     print(f"\nusage: {client.usage} — est ${cost:.2f}")
 
     os.makedirs("data/results", exist_ok=True)
-    slug = os.path.splitext(os.path.basename(args.concept))[0]
     out_path = f"data/results/{slug}-{time.strftime('%Y%m%d-%H%M%S')}.json"
     with open(out_path, "w") as f:
         json.dump({"concept": concept, "results": results, "errors": errors,
                    "model": MODEL, "est_cost_usd": round(cost, 2)}, f, indent=1)
     print(f"wrote {out_path}")
+    if not errors and os.path.exists(ckpt_path):
+        os.remove(ckpt_path)
 
 
 if __name__ == "__main__":
