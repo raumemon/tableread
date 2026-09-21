@@ -75,7 +75,8 @@ SYSTEM = (
     "think the question is silly, some can't imagine trading their sight for anything, some "
     "have wanted this answer their whole life. Let their faith or lack of it, their age, "
     "their family situation, and their practical circumstances drive the answer. Plain "
-    "spoken language, not philosophy-seminar language."
+    "spoken language, not philosophy-seminar language. Knowledge boundary: reference "
+    "only what this person's actual life would expose them to."
 )
 
 
