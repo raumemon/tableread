@@ -49,7 +49,75 @@ def household_for(age, renter, rng):
     return rng.choices([o for o, _ in opts], weights=[w for _, w in opts], k=1)[0]
 
 
+PUMS_PATH = "data/reference/pums_records.json"
+
+HHT2_TEXT = {
+    "01": "married couple with kids at home", "02": "married couple, no kids at home",
+    "03": "cohabiting couple with kids at home", "04": "cohabiting couple, no kids at home",
+    "05": "lives alone", "06": "single parent with kids at home",
+    "07": "lives with relatives", "08": "lives with roommates",
+    "09": "lives alone", "10": "single parent with kids at home",
+    "11": "lives with relatives", "12": "lives with roommates",
+}
+
+
+def emp_status(rec):
+    e = rec["employment"]
+    if e in ("1", "2"):
+        return "employed"
+    if e == "3":
+        return "unemployed, looking"
+    if e in ("4", "5"):
+        return "military"
+    if rec["age"] >= 60:
+        return "retired"
+    return "not in the labor force"
+
+
+def edu_band(schl):
+    try:
+        v = int(schl)
+    except ValueError:
+        return "unknown"
+    if v >= 21:
+        return "bachelor's or higher"
+    if v >= 18:
+        return "some college / associate's"
+    return "high school or less"
+
+
+def sample_demographics_pums(n, rng):
+    """Sample REAL Census respondents (ACS PUMS): actual joint distributions,
+    so implausible attribute combos can't occur at the demographic layer."""
+    recs = json.load(open(PUMS_PATH))
+    weights = [r["weight"] for r in recs]
+    people = []
+    for i in range(n):
+        rec = rng.choices(recs, weights=weights, k=1)[0]
+        hh = HHT2_TEXT.get(rec["household_type"], "lives alone")
+        if rec["own_children"] == 0 and "kids at home" in hh:
+            hh = hh.replace(" with kids at home", ", no kids at home")
+        people.append({
+            "id": f"p{i:03d}",
+            "pums": True, "puma": rec["puma"],
+            "area": rec["area"],
+            "age": rec["age"],
+            "household_income": max(rec["household_income"], 5000),
+            "renter": rec["renter"],
+            "household": hh + (f" ({rec['own_children']} kids)" if rec["own_children"] else ""),
+            "employment_status": emp_status(rec),
+            "student": rec["school_enrolled"],
+            "education": edu_band(rec["education"]),
+            "household_size": rec["household_size"],
+            "diet": rng.choices([dd for dd, _ in DIET], weights=[w for _, w in DIET], k=1)[0],
+            "cuisine_familiarity": rng.choices(range(10), weights=[8, 8, 10, 14, 14, 12, 12, 10, 7, 5], k=1)[0],
+        })
+    return people
+
+
 def sample_demographics(n, rng):
+    if os.path.exists(PUMS_PATH):
+        return sample_demographics_pums(n, rng)
     acs = json.load(open(ACS_PATH))
     bgs = [(geoid, d) for geoid, d in acs.items() if (d.get("population") or 0) > 0]
     weights = [d["population"] for _, d in bgs]
@@ -92,7 +160,7 @@ MANUAL_DIR = "data/corpus_manual"
 
 # Reddit skews young/male/extremely-online; reviews span the broadest local
 # demographics; manual drops (Facebook groups, Nextdoor) skew older/family.
-SOURCE_MIX = {"google_reviews": 0.55, "reddit": 0.25, "manual": 0.20}
+SOURCE_MIX = {"google_reviews": 0.45, "reddit": 0.20, "youtube": 0.15, "manual": 0.20}
 
 
 def _reddit_items():
@@ -129,6 +197,19 @@ def _review_items():
     return items
 
 
+def _youtube_items():
+    path = "data/corpus_reviews/youtube-comments.json"
+    if not os.path.exists(path):
+        return []
+    d = json.load(open(path))
+    items = []
+    for v in d.get("videos", []):
+        for c in v["comments"]:
+            items.append({"text": f"[on: {v['title'][:60]}] {c['text'][:900]}",
+                          "score": c.get("likes", 0), "sub": "youtube", "source": "youtube"})
+    return items
+
+
 def _manual_items():
     """Drop .txt files (Facebook threads, Nextdoor posts, anything pasted) into
     data/corpus_manual/ — one item per blank-line-separated block."""
@@ -151,7 +232,7 @@ def load_corpus_sample(max_chars=45000):
 
     A source with no material yields its quota to the others.
     """
-    pools = {"reddit": _reddit_items(), "google_reviews": _review_items(), "manual": _manual_items()}
+    pools = {"reddit": _reddit_items(), "google_reviews": _review_items(), "youtube": _youtube_items(), "manual": _manual_items()}
     for pool in pools.values():
         pool.sort(key=lambda x: -x["score"])
     available = {k: v for k, v in pools.items() if v}
@@ -207,8 +288,20 @@ ARCHETYPE_SCHEMA = {
 }
 
 
+def load_inlander():
+    path = "data/reference/inlander_best_of.json"
+    if not os.path.exists(path):
+        return ""
+    d = json.load(open(path))
+    lines = [f"{e['category']}: {e['winner']}" for sec in d.values() for e in sec]
+    return ("\n\nACTUAL LOCAL PREFERENCE DATA — Inlander 'Best of the Inland Northwest' "
+            "reader-poll winners (thousands of local votes; treat as revealed preference "
+            "about what this market already rewards):\n" + "\n".join(lines))
+
+
 def mine_archetypes(client, corpus):
-    corpus_text = "\n---\n".join(f"[r/{it['sub']}, score {it['score']}] {it['text']}" for it in corpus)
+    corpus_text = "\n---\n".join(f"[{it['source']}/{it['sub']}, score {it['score']}] {it['text']}" for it in corpus)
+    corpus_text += load_inlander()
     system = (
             "You are a consumer insights researcher segmenting the dining public of the "
             "Spokane WA / Coeur d'Alene ID corridor. You are given real Reddit posts and "
@@ -244,13 +337,11 @@ COHERENCE_SCHEMA = {
                 "properties": {
                     "id": {"type": "string"},
                     "occupation": {"type": "string",
-                                   "description": "Specific and realistic for this age/income/area, e.g. 'CNA on nights at Sacred Heart', 'drywall contractor', 'teller at STCU'. Mundane majority."},
-                    "household": {"type": "string",
-                                  "description": "Consistent with age, income, and occupation"},
+                                   "description": "Specific and realistic, MUST match the record's employment_status/education/age/income, e.g. 'CNA on nights at Sacred Heart', 'retired, formerly a Kaiser aluminum worker', 'drywall contractor'. Mundane majority."},
                     "life_details": {"type": "array", "items": {"type": "string"},
                                      "description": "Exactly 2, adapted from the pool (or lightly invented in the same spirit) so they FIT this person's age, income, schedule, and area"},
                 },
-                "required": ["id", "occupation", "household", "life_details"],
+                "required": ["id", "occupation", "life_details"],
                 "additionalProperties": False,
             },
         }
@@ -267,24 +358,27 @@ def coherence_pass(client, people, life_pool, batch=50):
     The model assigns occupation/household/life details that make sense JOINTLY.
     """
     system = (
-        "You make survey panel personas internally coherent. Each persona has FIXED anchors "
-        "from Census data: age, area, household income, renter status. For each, produce an "
-        "occupation, household situation, and 2 life details that are JOINTLY plausible for "
-        "that exact age/income/area in Spokane WA or Coeur d'Alene/Post Falls ID. Rules: "
-        "no under-22 registered nurses, no under-55 retirees, students under 30 only; "
-        "household income includes partners, so a modest personal job can pair with higher "
-        "household income ONLY if the household includes a partner; young kids mostly ages "
-        "24-42; keep the boring majority boring — warehouse, retail, healthcare support, "
-        "trades, office admin, food service dominate real Spokane employment. Adapt life "
-        "details from the pool to fit (change wording freely); never give someone a detail "
-        "their age/schedule/income contradicts."
+        "You make survey panel personas internally coherent. Each persona is anchored to a "
+        "REAL anonymized Census respondent: age, area, household income and size, household "
+        "type, renter status, employment status, education, and student status are FIXED — "
+        "never contradict them. Produce: (1) an occupation that fits those anchors exactly "
+        "(employed -> a specific plausible Spokane/CDA job matching education and income; "
+        "'retired' -> 'retired, formerly X'; 'unemployed, looking' -> last job + looking; "
+        "'not in the labor force' -> a plausible reason; 'military' -> plausibly Fairchild "
+        "AFB); keep the boring majority boring — warehouse, retail, healthcare support, "
+        "trades, office admin, food service dominate real local employment. (2) two life "
+        "details adapted from the pool (rewrite freely) that fit this exact person's age, "
+        "schedule, income, and area; never give someone a detail their anchors contradict."
         f"\nLIFE DETAIL POOL: {json.dumps(life_pool)}"
     )
     out = {}
     for i in range(0, len(people), batch):
         chunk = people[i:i + batch]
         skeletons = [{"id": p["id"], "age": p["age"], "area": p["area"],
-                      "household_income": p["household_income"], "renter": p["renter"]}
+                      "household_income": p["household_income"], "renter": p["renter"],
+                      "household": p.get("household", ""),
+                      "employment_status": p.get("employment_status", ""),
+                      "education": p.get("education", ""), "student": p.get("student", False)}
                      for p in chunk]
         data = client.complete_json(system, json.dumps(skeletons), COHERENCE_SCHEMA, max_tokens=8000)
         for fixed in data["personas"]:
@@ -294,7 +388,7 @@ def coherence_pass(client, people, life_pool, batch=50):
         f = out.get(p["id"])
         if f:
             p["work"] = f["occupation"]
-            p["household"] = f["household"]
+            p.setdefault("household", "")
             p["life_details"] = f["life_details"][:2]
     return people
 
@@ -309,9 +403,10 @@ def lint_panel(people):
             issues.append("underage RN")
         if p["age"] < 55 and "retired" in w:
             issues.append("early retiree")
-        if p["age"] > 32 and "student" in w and "grad" not in w:
-            issues.append("old undergrad")
-        if p["age"] < 24 and "kids at home" in p.get("household", "") and "young" not in p.get("household", ""):
+        if p["age"] > 32 and "student" in w and "grad" not in w and not p.get("student"):
+            issues.append("implausible student")
+        # PUMS-derived households are real records; only synthetic ones get this check
+        if not p.get("pums") and p["age"] < 24 and "with kids at home" in p.get("household", ""):
             issues.append("teen parent of older kids")
         if issues:
             bad += 1
