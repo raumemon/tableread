@@ -20,9 +20,9 @@ def load_env():
 
 load_env()  # must run before MODEL is resolved
 MODEL = os.environ.get("TABLEREAD_MODEL", "gpt-4o")
-# $/1M tokens: (input, cached input, output)
-PRICES = {"gpt-4o": (2.50, 1.25, 10.00), "gpt-4o-mini": (0.15, 0.075, 0.60),
-          "claude-sonnet-5": (2.00, 0.20, 10.00)}
+# $/1M tokens: (uncached input, cache read, cache write, output)
+PRICES = {"gpt-4o": (2.50, 1.25, 2.50, 10.00), "gpt-4o-mini": (0.15, 0.075, 0.15, 0.60),
+          "claude-sonnet-5": (2.00, 0.20, 2.50, 10.00)}
 
 
 def _strip_unsupported(schema):
@@ -45,7 +45,7 @@ def _strip_unsupported(schema):
 class LLM:
     def __init__(self):
         load_env()
-        self.usage = {"in": 0, "cached": 0, "out": 0}
+        self.usage = {"in": 0, "cached": 0, "cache_write": 0, "out": 0}
         self._lock = threading.Lock()
         forced = os.environ.get("TABLEREAD_PROVIDER")  # "openai" | "anthropic" | unset
         use_openai = (forced == "openai" if forced
@@ -61,16 +61,18 @@ class LLM:
             # Same discipline as OpenAI: stuck requests must die fast.
             self.client = anthropic.Anthropic(timeout=90.0, max_retries=4)
 
-    def _track(self, tin, cached, tout):
+    def _track(self, tin, cached, tout, cache_write=0):
         with self._lock:
-            self.usage["in"] += tin
-            self.usage["cached"] += cached
+            self.usage["in"] += tin          # uncached input only
+            self.usage["cached"] += cached   # cache reads
+            self.usage["cache_write"] += cache_write
             self.usage["out"] += tout
 
     def cost(self):
-        p = PRICES.get(MODEL, (2.50, 1.25, 10.00))
+        p = PRICES.get(MODEL, (2.50, 1.25, 2.50, 10.00))
         u = self.usage
-        return (u["in"] - u["cached"]) / 1e6 * p[0] + u["cached"] / 1e6 * p[1] + u["out"] / 1e6 * p[2]
+        return (u["in"] / 1e6 * p[0] + u["cached"] / 1e6 * p[1]
+                + u["cache_write"] / 1e6 * p[2] + u["out"] / 1e6 * p[3])
 
     def _openai_call(self, **kwargs):
         """Retry hard on rate-limit 429s (the org TPM limit is low, so waiting
@@ -99,7 +101,7 @@ class LLM:
             )
             u = resp.usage
             cached = getattr(getattr(u, "prompt_tokens_details", None), "cached_tokens", 0) or 0
-            self._track(u.prompt_tokens, cached, u.completion_tokens)
+            self._track(u.prompt_tokens - cached, cached, u.completion_tokens)
             return json.loads(resp.choices[0].message.content)
         resp = self.client.messages.create(
             model=MODEL, max_tokens=max_tokens,
@@ -109,7 +111,8 @@ class LLM:
             output_config={"format": {"type": "json_schema", "schema": _strip_unsupported(schema)}},
         )
         u = resp.usage
-        self._track(u.input_tokens, u.cache_read_input_tokens or 0, u.output_tokens)
+        self._track(u.input_tokens, u.cache_read_input_tokens or 0, u.output_tokens,
+                    u.cache_creation_input_tokens or 0)
         return json.loads(next(b.text for b in resp.content if b.type == "text"))
 
     def complete_text(self, system, user, max_tokens=500):
@@ -121,12 +124,13 @@ class LLM:
             )
             u = resp.usage
             cached = getattr(getattr(u, "prompt_tokens_details", None), "cached_tokens", 0) or 0
-            self._track(u.prompt_tokens, cached, u.completion_tokens)
+            self._track(u.prompt_tokens - cached, cached, u.completion_tokens)
             return resp.choices[0].message.content.strip()
         resp = self.client.messages.create(
             model=MODEL, max_tokens=max_tokens, system=system,
             thinking={"type": "disabled"},
             messages=[{"role": "user", "content": user}])
         u = resp.usage
-        self._track(u.input_tokens, u.cache_read_input_tokens or 0, u.output_tokens)
+        self._track(u.input_tokens, u.cache_read_input_tokens or 0, u.output_tokens,
+                    u.cache_creation_input_tokens or 0)
         return next(b.text for b in resp.content if b.type == "text").strip()
