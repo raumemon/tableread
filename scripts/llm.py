@@ -10,18 +10,19 @@ import random
 import threading
 import time
 
-MODEL = os.environ.get("TABLEREAD_MODEL", "gpt-4o")
-# $/1M tokens: (input, cached input, output)
-PRICES = {"gpt-4o": (2.50, 1.25, 10.00), "gpt-4o-mini": (0.15, 0.075, 0.60),
-          "claude-sonnet-5": (2.00, 0.20, 10.00)}
-
-
 def load_env():
     if os.path.exists(".env"):
         for line in open(".env"):
             if "=" in line and not line.startswith("#"):
                 k, v = line.strip().split("=", 1)
                 os.environ.setdefault(k, v)
+
+
+load_env()  # must run before MODEL is resolved
+MODEL = os.environ.get("TABLEREAD_MODEL", "gpt-4o")
+# $/1M tokens: (input, cached input, output)
+PRICES = {"gpt-4o": (2.50, 1.25, 10.00), "gpt-4o-mini": (0.15, 0.075, 0.60),
+          "claude-sonnet-5": (2.00, 0.20, 10.00)}
 
 
 def _strip_unsupported(schema):
@@ -101,9 +102,10 @@ class LLM:
             return json.loads(resp.choices[0].message.content)
         resp = self.client.messages.create(
             model=MODEL, max_tokens=max_tokens,
+            thinking={"type": "disabled"},  # persona surveys don't need reasoning tokens
             system=[{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}],
             messages=[{"role": "user", "content": user}],
-            output_config={"format": {"type": "json_schema", "schema": schema}},
+            output_config={"format": {"type": "json_schema", "schema": _strip_unsupported(schema)}},
         )
         u = resp.usage
         self._track(u.input_tokens, u.cache_read_input_tokens or 0, u.output_tokens)
@@ -122,6 +124,7 @@ class LLM:
             return resp.choices[0].message.content.strip()
         resp = self.client.messages.create(
             model=MODEL, max_tokens=max_tokens, system=system,
+            thinking={"type": "disabled"},
             messages=[{"role": "user", "content": user}])
         u = resp.usage
         self._track(u.input_tokens, u.cache_read_input_tokens or 0, u.output_tokens)
