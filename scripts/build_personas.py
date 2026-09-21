@@ -87,14 +87,15 @@ def sample_demographics(n, rng):
 
 
 SUPPLEMENT_DIR = os.path.expanduser("~/projects/site-scout/data/reddit")
+REVIEWS_PATH = "data/corpus_reviews/google-reviews.json"
+MANUAL_DIR = "data/corpus_manual"
+
+# Reddit skews young/male/extremely-online; reviews span the broadest local
+# demographics; manual drops (Facebook groups, Nextdoor) skew older/family.
+SOURCE_MIX = {"google_reviews": 0.55, "reddit": 0.25, "manual": 0.20}
 
 
-def load_corpus_sample(max_chars=45000):
-    """High-signal posts and comments across all topics, score-weighted.
-
-    Blends the dining-topic corpus with site-scout's neighborhood corpus
-    (same file shape); dining files win ties via a small score boost.
-    """
+def _reddit_items():
     paths = [os.path.join(CORPUS_DIR, fn) for fn in sorted(os.listdir(CORPUS_DIR))]
     if os.path.isdir(SUPPLEMENT_DIR):
         paths += [os.path.join(SUPPLEMENT_DIR, fn) for fn in sorted(os.listdir(SUPPLEMENT_DIR))]
@@ -105,17 +106,69 @@ def load_corpus_sample(max_chars=45000):
         for p in d.get("posts", []):
             text = (p["title"] + ". " + p.get("selftext", "")).strip()
             if len(text) > 40:
-                items.append({"text": text[:900], "score": p.get("score", 0) + boost, "sub": d["subreddit"]})
+                items.append({"text": text[:900], "score": p.get("score", 0) + boost,
+                              "sub": d["subreddit"], "source": "reddit"})
         for c in d.get("comments", []):
             if len(c.get("body", "")) > 40:
-                items.append({"text": c["body"][:900], "score": c.get("score", 0) + boost, "sub": d["subreddit"]})
-    items.sort(key=lambda x: -x["score"])
-    out, total = [], 0
-    for it in items:
-        if total + len(it["text"]) > max_chars:
-            break
-        out.append(it)
-        total += len(it["text"])
+                items.append({"text": c["body"][:900], "score": c.get("score", 0) + boost,
+                              "sub": d["subreddit"], "source": "reddit"})
+    return items
+
+
+def _review_items():
+    if not os.path.exists(REVIEWS_PATH):
+        return []
+    d = json.load(open(REVIEWS_PATH))
+    items = []
+    for place in d["places"]:
+        for rev in place["reviews"]:
+            # Longer, opinionated reviews carry the most voice signal.
+            score = len(rev["text"]) // 120 + (2 if rev.get("rating") in (1, 2, 5) else 0)
+            items.append({"text": f"[{place['name']}, {rev.get('rating')}*] {rev['text'][:900]}",
+                          "score": score, "sub": "google", "source": "google_reviews"})
+    return items
+
+
+def _manual_items():
+    """Drop .txt files (Facebook threads, Nextdoor posts, anything pasted) into
+    data/corpus_manual/ — one item per blank-line-separated block."""
+    if not os.path.isdir(MANUAL_DIR):
+        return []
+    items = []
+    for fn in sorted(os.listdir(MANUAL_DIR)):
+        if not fn.endswith(".txt"):
+            continue
+        blocks = open(os.path.join(MANUAL_DIR, fn)).read().split("\n\n")
+        for b in blocks:
+            b = b.strip()
+            if len(b) > 40:
+                items.append({"text": b[:900], "score": 5, "sub": fn[:-4], "source": "manual"})
+    return items
+
+
+def load_corpus_sample(max_chars=45000):
+    """Score-weighted sample, mixed across sources by SOURCE_MIX quotas.
+
+    A source with no material yields its quota to the others.
+    """
+    pools = {"reddit": _reddit_items(), "google_reviews": _review_items(), "manual": _manual_items()}
+    for pool in pools.values():
+        pool.sort(key=lambda x: -x["score"])
+    available = {k: v for k, v in pools.items() if v}
+    weight_total = sum(SOURCE_MIX[k] for k in available)
+    out = []
+    for src, pool in available.items():
+        budget = max_chars * SOURCE_MIX[src] / weight_total
+        total = 0
+        for it in pool:
+            if total + len(it["text"]) > budget:
+                break
+            out.append(it)
+            total += len(it["text"])
+    counts = {}
+    for it in out:
+        counts[it["source"]] = counts.get(it["source"], 0) + 1
+    print(f"corpus mix: {counts}")
     return out
 
 
