@@ -58,7 +58,8 @@ class LLM:
         else:
             import anthropic
             self.provider = "anthropic"
-            self.client = anthropic.Anthropic()
+            # Same discipline as OpenAI: stuck requests must die fast.
+            self.client = anthropic.Anthropic(timeout=90.0, max_retries=4)
 
     def _track(self, tin, cached, tout):
         with self._lock:
