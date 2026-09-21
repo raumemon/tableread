@@ -24,6 +24,45 @@ importance_questions:
   - "rice as an option for a bowl (instead of pita/fries only)"
 habit_price_questions: true
 
+# What actually earns a $10 visit — forced tradeoffs, not 1-10 diplomacy.
+maxdiff_attributes:
+  - "fresh-carved meat"
+  - "homemade sauces"
+  - "fresh falafel"
+  - "big portions"
+  - "fast service"
+  - "$7.99 price point"
+  - "locally owned"
+  - "fresh pita made daily"
+  - "open late"
+  - "healthy options"
+  - "great fries"
+  - "friendly staff"
+
+# Realistic competing decisions instead of "do you like it".
+choice_scenarios:
+  - prompt: >
+      It's 12:20 PM on a Tuesday. You have about 30 minutes for lunch.
+    options:
+      - "Fresh-carved chicken shawarma pita, $7.99, 6 minutes away"
+      - "Burrito or bowl, $11.50, 4 minutes away"
+      - "Burger and fries, $10.49, 5 minutes away"
+      - "Don't eat out (packed lunch / skip / eat at home)"
+  - prompt: >
+      Same Tuesday lunch, but the shawarma spot's price changed.
+    options:
+      - "Fresh-carved chicken shawarma pita, $9.99, 6 minutes away"
+      - "Burrito or bowl, $11.50, 4 minutes away"
+      - "Burger and fries, $10.49, 5 minutes away"
+      - "Don't eat out (packed lunch / skip / eat at home)"
+  - prompt: >
+      It's 9:40 PM on a Saturday. You're out and hungry.
+    options:
+      - "Gyro spot, open late, $8.99 gyro, 10 minutes away"
+      - "Fast-food drive-thru, $7, 5 minutes away"
+      - "Pizza slice place, $6, 8 minutes away"
+      - "Go home and eat there"
+
 notes: >
   Round 1 is a pure name test. Slogan candidates can be mined from this
   run's verbatims (scripts/mine_language.py) and tested in round 2.

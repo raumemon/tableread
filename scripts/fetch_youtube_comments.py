@@ -13,6 +13,9 @@ import time
 
 import requests
 
+import sys
+sys.path.insert(0, os.path.dirname(__file__))
+
 KEY_PATH = os.path.expanduser("~/projects/site-scout/data/google_api_key.txt")
 OUT = "data/corpus_reviews/youtube-comments.json"
 
@@ -32,7 +35,9 @@ def get(url, **params):
 
 
 def main():
-    key = open(KEY_PATH).read().strip()
+    from llm import load_env
+    load_env()
+    key = os.environ.get("GOOGLE_YT_KEY") or open(KEY_PATH).read().strip()
     videos = {}
     for q in QUERIES:
         try:

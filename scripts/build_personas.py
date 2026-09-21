@@ -442,12 +442,35 @@ def main():
     archetypes, life_details = mine_archetypes(client, corpus)
     print(f"archetypes: {[a['name'] for a in archetypes]}; {len(life_details)} life details")
 
-    quote_pool = [it["text"] for it in corpus if it["score"] >= 3]
+    # Voice anchoring matched to demographics: a 65yo shouldn't be linguistically
+    # anchored by 22yo Redditors. Sources skew: reddit/youtube-comment young-ish
+    # extremely-online; reviews broadest; manual (FB/Nextdoor) older/family.
+    by_source = {}
+    for it in corpus:
+        by_source.setdefault(it["source"], []).append(it["text"])
+
+    def source_weights(age):
+        if age < 32:
+            w = {"reddit": 4, "youtube": 2, "google_reviews": 3, "manual": 1}
+        elif age < 55:
+            w = {"google_reviews": 4, "reddit": 2, "youtube": 2, "manual": 2}
+        else:
+            w = {"google_reviews": 4, "manual": 3, "youtube": 2, "reddit": 1}
+        return {k: v for k, v in w.items() if by_source.get(k)}
+
+    def draw_quotes(age, k=3):
+        out = []
+        w = source_weights(age)
+        for _ in range(k):
+            src = rng.choices(list(w), weights=list(w.values()), k=1)[0]
+            out.append(rng.choice(by_source[src]))
+        return out
+
     people = sample_demographics(args.n, rng)
     for p in people:
         arch = assign_archetype(p, archetypes, rng)
         p["archetype"] = arch["key"]
-        p["voice_quotes"] = rng.sample(quote_pool, k=min(3, len(quote_pool)))
+        p["voice_quotes"] = draw_quotes(p["age"])
     people = coherence_pass(client, people, life_details)
     print("lint:")
     bad = lint_panel(people)
