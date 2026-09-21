@@ -1,0 +1,136 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Spokane Gyro Panel</title></head><body>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Public+Sans:wght@400;600;700&display=swap">
+<style>
+:root{
+  --paper:#FBFAF5; --ink:#23271E; --muted:#6E7264; --line:#E3E1D4;
+  --tile:#F2F0E6; --accent:#932B35; --accent-soft:#F3E3E1; --bar:#5A6B4C;
+  --bar-soft:#DCE2D2; --warn:#A8842C;
+}
+:root:not([data-theme="light"]){}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#1A1C16; --ink:#EBE9DF; --muted:#9A9D8E; --line:#34372C;
+    --tile:#23261D; --accent:#D06A72; --accent-soft:#3A2426; --bar:#93AA7C;
+    --bar-soft:#2C3324; --warn:#C9A34E;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#1A1C16; --ink:#EBE9DF; --muted:#9A9D8E; --line:#34372C;
+  --tile:#23261D; --accent:#D06A72; --accent-soft:#3A2426; --bar:#93AA7C;
+  --bar-soft:#2C3324; --warn:#C9A34E;
+}
+body{background:var(--paper); color:var(--ink); font:16px/1.55 "Public Sans",system-ui,sans-serif;
+  margin:0; padding-block:0 4rem; padding-inline:20px;}
+main{max-width:840px; margin:0 auto;}
+h1,h2{font-family:"Young Serif",Georgia,serif; font-weight:400; text-wrap:balance;}
+h1{font-size:clamp(1.9rem,5vw,2.7rem); margin:2.4rem 0 .2rem;}
+h2{font-size:1.35rem; margin:2.8rem 0 .9rem; padding-top:1.6rem; border-top:1px solid var(--line);}
+.meta{color:var(--muted); font-size:.85rem; margin-bottom:1.6rem;}
+.meta b{color:var(--ink);}
+.tiles{display:flex; gap:12px; flex-wrap:wrap; margin:1.4rem 0;}
+.tile{background:var(--tile); border-radius:8px; padding:14px 18px; flex:1 1 150px; min-width:0;}
+.tile .big{font-family:"Young Serif",Georgia,serif; font-size:1.9rem; line-height:1.1;}
+.tile .lbl{font-size:.78rem; color:var(--muted); margin-top:2px;}
+.namegrid{display:grid; grid-template-columns:auto 1fr auto auto; gap:8px 14px; align-items:center;
+  font-variant-numeric:tabular-nums;}
+.namegrid .hd{font-size:.72rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted);}
+.nm{font-weight:600; white-space:nowrap;}
+.track{background:var(--bar-soft); border-radius:4px; height:16px; position:relative; min-width:80px;}
+.fill{background:var(--bar); height:16px; border-radius:4px;}
+.fill.acc{background:var(--accent);}
+.pct{font-size:.85rem; text-align:right;}
+.pct.love{color:var(--bar); font-weight:600;}
+.pct.hate{color:var(--accent);}
+.note{background:var(--tile); border-left:3px solid var(--accent); border-radius:0 8px 8px 0;
+  padding:12px 16px; font-size:.92rem; margin:1.2rem 0;}
+.ladder{display:flex; flex-wrap:wrap; gap:0; margin:1.2rem 0; border-radius:8px; overflow:hidden;}
+.rung{flex:1 1 120px; padding:12px 14px; font-size:.82rem;}
+.rung .p{font-family:"Young Serif",Georgia,serif; font-size:1.4rem;}
+.r1{background:var(--bar-soft);} .r2{background:var(--tile);} .r3{background:var(--accent-soft);}
+q{font-style:italic;}
+.quotes blockquote{margin:.8rem 0; padding:.7rem 1rem; background:var(--tile); border-radius:8px;
+  font-size:.93rem;}
+.quotes footer{color:var(--muted); font-size:.78rem; margin-top:6px; font-style:normal;}
+.slogan{font-family:"Young Serif",Georgia,serif; font-size:1.15rem; font-style:normal;}
+.echo{display:inline-block; background:var(--bar-soft); color:var(--ink); border-radius:999px;
+  padding:1px 10px; font-size:.72rem; margin-left:6px; vertical-align:middle;}
+table{border-collapse:collapse; width:100%; font-size:.9rem;}
+td,th{border-bottom:1px solid var(--line); padding:8px 10px; text-align:left; vertical-align:top;}
+th{font-size:.72rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); font-weight:600;}
+td.n{font-variant-numeric:tabular-nums; white-space:nowrap;}
+.small{font-size:.82rem; color:var(--muted);}
+.method{font-size:.85rem; color:var(--muted); border-top:1px solid var(--line); margin-top:3rem; padding-top:1.2rem;}
+@media (max-width:560px){ .namegrid{grid-template-columns:1fr auto auto;} .namegrid .track{display:none;} .namegrid .hd.trk{display:none;} }
+</style>
+<main>
+<h1>Spokane Gyro Panel</h1>
+<p class="meta">Synthetic local market research · fast-casual gyro &amp; kebab concept · Spokane / Coeur d'Alene corridor<br>
+<b>300 personas</b> grounded in Census block-group demographics + local Reddit discourse · September 20, 2026 · round 1</p>
+
+<div class="tiles">
+  <div class="tile"><div class="big">57%</div><div class="lbl">trial-intent index</div></div>
+  <div class="tile"><div class="big">160<span style="font-size:1rem;color:var(--muted)">/300</span></div><div class="lbl">would probably or definitely try within a month</div></div>
+  <div class="tile"><div class="big">$12</div><div class="lbl">median expected price, gyro combo</div></div>
+</div>
+
+<h2>Name test</h2>
+<div class="namegrid">
+  <span class="hd">Name</span><span class="hd trk">Mean score /10</span><span class="hd">Loved (8+)</span><span class="hd">Rejected (≤4)</span>
+  <span class="nm">Turn It Up Gyros</span><span class="track"><span class="fill" style="width:58%"></span></span><span class="pct">2%</span><span class="pct">4%</span>
+  <span class="nm">The Kebab Spot</span><span class="track"><span class="fill" style="width:55%"></span></span><span class="pct">0%</span><span class="pct">3%</span>
+  <span class="nm">Sumak</span><span class="track"><span class="fill acc" style="width:52%"></span></span><span class="pct love">25%</span><span class="pct hate">45%</span>
+  <span class="nm">Good Turn</span><span class="track"><span class="fill" style="width:47%"></span></span><span class="pct">0%</span><span class="pct hate">49%</span>
+  <span class="nm">K Bab</span><span class="track"><span class="fill" style="width:37%"></span></span><span class="pct">0%</span><span class="pct hate">99%</span>
+  <span class="nm">K Bob</span><span class="track"><span class="fill" style="width:26%"></span></span><span class="pct">0%</span><span class="pct hate">100%</span>
+</div>
+<div class="note"><b>The fork:</b> Turn It Up Gyros is the safest name nobody loves (highest mean, 2% enthusiasm). <b>Sumak is the only name that generates passion</b> — 1 in 4 scored it 8+ for the same stated reason: <q>sumac is a real spice, so it signals they know what they're doing.</q> Its 45% rejection skews older and price-sensitive (&ldquo;pretentious,&rdquo; &ldquo;how do you say it&rdquo;). Broad late-night positioning → Turn It Up. Foodie-authenticity brand → Sumak.</div>
+<p class="small">K Bob was rejected by 100% of the panel and repeatedly collided with K-Bob's Steakhouse. K Bab reads as a typo of kebab. Good Turn &ldquo;sounds like a nonprofit or a bike shop&rdquo; — it doesn't signal food.</p>
+
+<h2>Pricing</h2>
+<div class="ladder">
+  <div class="rung r1"><div class="p">$9</div>median price for a <b>weekly</b> habit</div>
+  <div class="rung r2"><div class="p">$12</div>median <b>expected</b> price for a combo</div>
+  <div class="rung r2"><div class="p">$13</div>median price for a <b>monthly</b> habit</div>
+  <div class="rung r3"><div class="p">$13–16</div>the concept's <b>stated</b> combo target</div>
+</div>
+<p>The stated $13–16 combo is <b>monthly-treat pricing</b>, and &ldquo;steep for fast-casual&rdquo; was the single most repeated objection across nearly every segment. The panel's implied move: a <b>sub-$10 entry item</b> (half gyro / mini combo) to drive trial and frequency, with full combos as the upsell. Treat exact dollar figures as directional; the <i>shape</i> — weekly money is $9 money, not $14 money — was consistent across ages and incomes.</p>
+
+<h2>Feature importance</h2>
+<table>
+<tr><th>Feature</th><th>Mean /10</th><th>Rate it 8+</th><th>Read</th></tr>
+<tr><td><b>Fresh-made sauces</b> (house, not jarred)</td><td class="n">7.3</td><td class="n">49%</td><td>Near-dealbreaker; &ldquo;bottled tzatziki&rdquo; is the panel's shorthand for a low-effort operation</td></tr>
+<tr><td><b>Rice option for bowls</b></td><td class="n">6.3</td><td class="n">6%</td><td>Broadly wanted (low-carb + family personas), few dealbreakers</td></tr>
+<tr><td><b>Fresh-made falafel</b> (not frozen)</td><td class="n">5.1</td><td class="n">8%</td><td>Nice-to-have — except for the vegetarian-leaning minority, where it's the whole meal</td></tr>
+</table>
+
+<h2>Does the spit need to be visible?</h2>
+<p>Follow-up probe, all 300 personas, given the real constraint: <i>the meat is genuinely carved to order off a vertical spit, but the kitchen is closed — customers never see it.</i></p>
+<div class="tiles">
+  <div class="tile"><div class="big">0</div><div class="lbl">called it a dealbreaker or meaningful downgrade</div></div>
+  <div class="tile"><div class="big">88%</div><div class="lbl">&ldquo;fine — with other proof&rdquo; (12% needed no proof at all)</div></div>
+  <div class="tile"><div class="big">3.6<span style="font-size:1rem;color:var(--muted)">/10</span></div><div class="lbl">importance of physically seeing the spit</div></div>
+</div>
+<p>What substitutes for seeing it, ranked by the panel: <b>&ldquo;carved to order&rdquo; language on the menu</b> (286 of 300), <b>the food itself proving it</b> (283), and <b>reviews / word-of-mouth</b> (197). Nobody asked for photos or a video screen of the spit. The closed kitchen costs nothing if the menu makes the claim and the product backs it up.</p>
+
+<h2>Slogan candidates, mined from the panel's own words</h2>
+<div class="quotes">
+  <blockquote><span class="slogan">&ldquo;Fresh-Carved. Made Daily. No Heat Lamp Required.&rdquo;</span><footer>&ldquo;Heat lamp&rdquo; was the panel's own most-repeated disgust shorthand — the negation is instantly legible. Register: casual/premium.</footer></blockquote>
+  <blockquote><span class="slogan">&ldquo;Know Your Spice. Know Your Gyro.&rdquo;</span><span class="echo">echoes 240 real local posts</span><footer>Built from the recurring Sumak-praise language. Register: foodie.</footer></blockquote>
+  <blockquote><span class="slogan">&ldquo;Open Late. Open Honest.&rdquo;</span><span class="echo">echoes 199 real local posts</span><footer>Late-night gap + the local demand for real (not dressed-up-chain) ownership. Register: late-night/casual.</footer></blockquote>
+</div>
+
+<h2>Objections to preempt</h2>
+<table>
+<tr><th>Objection</th><th>Panel-derived counter</th></tr>
+<tr><td>&ldquo;$13–16 is sit-down pricing for fast-casual&rdquo;</td><td>Sub-$10 entry item, marketed as the low-risk first try</td></tr>
+<tr><td>&ldquo;Probably a chain dressed up to look local&rdquo;</td><td>Owner's name and story on the wall / cup / menu — the local-scene segment said this &ldquo;seals the deal&rdquo;</td></tr>
+<tr><td>&ldquo;I've never had a gyro; I don't know what to order&rdquo;</td><td>Picture menu + a labeled first-timer sampler (unfamiliarity, not price, blocks the chain-loyalist segment)</td></tr>
+<tr><td>&ldquo;Veggie options feel like an afterthought&rdquo;</td><td>Falafel / rice bowl on the main board, not a footnote</td></tr>
+<tr><td>&ldquo;Grab-and-go only — nowhere to linger&rdquo;</td><td>Even a few tables converts would-be regulars who want to be known there</td></tr>
+</table>
+
+<div class="method">
+<b>Method &amp; honest caveats.</b> 300 synthetic personas: demographics sampled from Census ACS block groups (Spokane County WA + Kootenai County ID, population-weighted, reproducible seed), dining psychographics and voice mined from ~3,400 real posts and comments on r/Spokane and r/CoeurdAlene, surveys completed in-character by claude-sonnet-5 with structured outputs. Published validations put well-grounded synthetic panels at 85–95% agreement with human panels on <i>directional, linguistic</i> questions — names, claims, positioning — which is what this report contains. Synthetic panels are not a substitute for human research on taste, final pricing, or major-spend go/no-go decisions; errors are correlated across personas, so treat margins, not means, with confidence. Total research cost of this round: about $7.
+</div>
+</main></body></html>
