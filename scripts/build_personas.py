@@ -34,9 +34,12 @@ DIET = [("none", 78), ("vegetarian-ish, flexible", 6), ("gluten-free household m
 
 
 def household_for(age, renter, rng):
-    if age < 30:
-        opts = [("lives with roommates", 30), ("lives alone", 25), ("couple, no kids", 30),
-                ("young kids at home", 15)]
+    if age < 25:
+        opts = [("lives with roommates", 38), ("lives alone", 22), ("couple, no kids", 24),
+                ("lives with parents", 8), ("young kids at home", 8)]
+    elif age < 30:
+        opts = [("lives with roommates", 22), ("lives alone", 24), ("couple, no kids", 36),
+                ("young kids at home", 18)]
     elif age < 50:
         opts = [("kids at home who veto restaurants", 38), ("couple, no kids", 27),
                 ("lives alone", 20), ("teenagers at home", 15)]
@@ -178,6 +181,91 @@ def mine_archetypes(client, corpus):
     return data["archetypes"], data["life_details"]
 
 
+COHERENCE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "personas": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "string"},
+                    "occupation": {"type": "string",
+                                   "description": "Specific and realistic for this age/income/area, e.g. 'CNA on nights at Sacred Heart', 'drywall contractor', 'teller at STCU'. Mundane majority."},
+                    "household": {"type": "string",
+                                  "description": "Consistent with age, income, and occupation"},
+                    "life_details": {"type": "array", "items": {"type": "string"},
+                                     "description": "Exactly 2, adapted from the pool (or lightly invented in the same spirit) so they FIT this person's age, income, schedule, and area"},
+                },
+                "required": ["id", "occupation", "household", "life_details"],
+                "additionalProperties": False,
+            },
+        }
+    },
+    "required": ["personas"],
+    "additionalProperties": False,
+}
+
+
+def coherence_pass(client, people, life_pool, batch=50):
+    """Resolve independently-sampled attributes into internally consistent people.
+
+    Hard anchors (never changed): age, area, income, renter, diet, familiarity.
+    The model assigns occupation/household/life details that make sense JOINTLY.
+    """
+    system = (
+        "You make survey panel personas internally coherent. Each persona has FIXED anchors "
+        "from Census data: age, area, household income, renter status. For each, produce an "
+        "occupation, household situation, and 2 life details that are JOINTLY plausible for "
+        "that exact age/income/area in Spokane WA or Coeur d'Alene/Post Falls ID. Rules: "
+        "no under-22 registered nurses, no under-55 retirees, students under 30 only; "
+        "household income includes partners, so a modest personal job can pair with higher "
+        "household income ONLY if the household includes a partner; young kids mostly ages "
+        "24-42; keep the boring majority boring — warehouse, retail, healthcare support, "
+        "trades, office admin, food service dominate real Spokane employment. Adapt life "
+        "details from the pool to fit (change wording freely); never give someone a detail "
+        "their age/schedule/income contradicts."
+        f"\nLIFE DETAIL POOL: {json.dumps(life_pool)}"
+    )
+    out = {}
+    for i in range(0, len(people), batch):
+        chunk = people[i:i + batch]
+        skeletons = [{"id": p["id"], "age": p["age"], "area": p["area"],
+                      "household_income": p["household_income"], "renter": p["renter"]}
+                     for p in chunk]
+        data = client.complete_json(system, json.dumps(skeletons), COHERENCE_SCHEMA, max_tokens=8000)
+        for fixed in data["personas"]:
+            out[fixed["id"]] = fixed
+        print(f"coherence: {min(i + batch, len(people))}/{len(people)}")
+    for p in people:
+        f = out.get(p["id"])
+        if f:
+            p["work"] = f["occupation"]
+            p["household"] = f["household"]
+            p["life_details"] = f["life_details"][:2]
+    return people
+
+
+def lint_panel(people):
+    """Flag residual implausible combos; returns count."""
+    bad = 0
+    for p in people:
+        w = p["work"].lower()
+        issues = []
+        if p["age"] < 22 and ("nurse" in w and "cna" not in w and "aide" not in w):
+            issues.append("underage RN")
+        if p["age"] < 55 and "retired" in w:
+            issues.append("early retiree")
+        if p["age"] > 32 and "student" in w and "grad" not in w:
+            issues.append("old undergrad")
+        if p["age"] < 24 and "kids at home" in p.get("household", "") and "young" not in p.get("household", ""):
+            issues.append("teen parent of older kids")
+        if issues:
+            bad += 1
+            print(f"  LINT {p['id']}: {', '.join(issues)} — {p['age']}yo, {p['work']!r}, {p['household']!r}")
+    return bad
+
+
 def assign_archetype(person, archetypes, rng):
     def skew_mult(arch):
         m = 1.0
@@ -212,7 +300,10 @@ def main():
         arch = assign_archetype(p, archetypes, rng)
         p["archetype"] = arch["key"]
         p["voice_quotes"] = rng.sample(quote_pool, k=min(3, len(quote_pool)))
-        p["life_details"] = rng.sample(life_details, k=min(2, len(life_details)))
+    people = coherence_pass(client, people, life_details)
+    print("lint:")
+    bad = lint_panel(people)
+    print(f"lint flagged {bad}/{len(people)}")
 
     out = {"archetypes": archetypes, "personas": people, "seed": SEED}
     os.makedirs("data", exist_ok=True)

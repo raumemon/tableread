@@ -57,10 +57,14 @@ Needs `ANTHROPIC_API_KEY` in `.env`.
 ## What synthetic panels are (and aren't) good for
 
 Validated use: directional screening of *linguistic* assets — names, slogans,
-claims, positioning — where published head-to-heads show 85-95% agreement with
-human panels. NOT a substitute for: taste tests, final go/no-go on big spends,
-or anything where you can cheaply ask 20 real locals. Screen synthetic, confirm
-human.
+claims, positioning. Published validations report strong AGGREGATE agreement
+between well-grounded synthetic and human panels on directional tasks, while
+individual-respondent correspondence is weaker and heavily task/grounding
+dependent — synthetic respondents share one underlying model, so errors
+correlate and margins matter more than decimals. Report stability across
+repeated runs, not fake confidence intervals. NOT a substitute for: taste
+tests, final go/no-go on big spends, or anything where you can cheaply ask 20
+real locals. Screen synthetic, confirm human.
 
 ## Upgrade roadmap (paid, in rough order of value)
 
