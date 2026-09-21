@@ -1,6 +1,6 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Spokane Gyro Panel</title></head><body>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Marcellus&family=Instrument+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700;800&display=swap">
 <style>
 :root{
   --ground:#E9E8E4; --card:#FCFCFB; --ink:#2C2C2E; --sub:#77756F; --hair:#D2D1CB;
@@ -20,21 +20,21 @@
   --data:#C9C8C3; --data-soft:#3F3F43; --neg:#C97A72; --pos:#93AC8F;
 }
 body{background:var(--ground); color:var(--ink);
-  font:15.5px/1.6 "Instrument Sans",system-ui,sans-serif; margin:0; padding-block:0 5rem; padding-inline:0;}
+  font:15.5px/1.6 "Libre Franklin",system-ui,sans-serif; margin:0; padding-block:0 5rem; padding-inline:0;}
 .band{background:var(--head-bg); color:var(--head-ink); padding:4.2rem 24px 3.6rem;}
 .band-inner, main{max-width:880px; margin:0 auto;}
 main{padding-inline:24px;}
-h1{font-family:"Marcellus",Georgia,serif; font-weight:400; font-size:clamp(2.1rem,5.5vw,3.2rem);
-  margin:0 0 .9rem; letter-spacing:.01em; text-wrap:balance;}
+h1{font-family:"Libre Franklin",system-ui,sans-serif; font-weight:800; font-size:clamp(1.9rem,5vw,2.8rem);
+  margin:0 0 .9rem; letter-spacing:-.02em; text-wrap:balance;}
 .band .meta{color:var(--head-sub); font-size:.9rem; max-width:56ch;}
 .band .meta b{color:var(--head-ink); font-weight:500;}
-h2{font-family:"Marcellus",Georgia,serif; font-weight:400; font-size:1.5rem; letter-spacing:.01em;
+h2{font-family:"Libre Franklin",system-ui,sans-serif; font-weight:700; font-size:1.3rem; letter-spacing:-.01em;
   margin:3.4rem 0 1.1rem; text-wrap:balance;}
 .k{font-size:.72rem; letter-spacing:.14em; text-transform:uppercase; color:var(--sub); font-weight:600;}
 .tiles{display:flex; gap:1px; flex-wrap:wrap; margin:-2.2rem auto 0; max-width:880px; padding-inline:24px;}
 .tile{background:var(--card); border:1px solid var(--hair); padding:20px 22px; flex:1 1 170px; min-width:0;}
 .tile+.tile{border-left:none;}
-.tile .big{font-family:"Marcellus",Georgia,serif; font-size:2.1rem; line-height:1.05;}
+.tile .big{font-weight:700; font-size:2rem; line-height:1.05; letter-spacing:-.02em; font-variant-numeric:tabular-nums;}
 .tile .lbl{font-size:.8rem; color:var(--sub); margin-top:4px;}
 .card{background:var(--card); border:1px solid var(--hair); padding:22px 24px;}
 .namegrid{display:grid; grid-template-columns:auto 1fr auto auto; gap:10px 18px; align-items:center;
@@ -49,7 +49,7 @@ h2{font-family:"Marcellus",Georgia,serif; font-weight:400; font-size:1.5rem; let
 .ladder{display:flex; flex-wrap:wrap; gap:1px; margin:1.2rem 0;}
 .rung{flex:1 1 140px; background:var(--card); border:1px solid var(--hair); padding:16px 18px; font-size:.82rem; color:var(--sub);}
 .rung+.rung{border-left:none;}
-.rung .p{font-family:"Marcellus",Georgia,serif; font-size:1.5rem; color:var(--ink);}
+.rung .p{font-weight:700; font-size:1.4rem; color:var(--ink); letter-spacing:-.01em; font-variant-numeric:tabular-nums;}
 .rung.hot .p{color:var(--neg);}
 q{font-style:italic;}
 table{border-collapse:collapse; width:100%; font-size:.9rem; background:var(--card);}
@@ -61,7 +61,7 @@ p{max-width:70ch;}
 .quotes blockquote{margin:0; background:var(--card); border:1px solid var(--hair); padding:16px 20px; font-size:.92rem;}
 .quotes blockquote+blockquote{border-top:none;}
 .quotes footer{color:var(--sub); font-size:.78rem; margin-top:8px; font-style:normal;}
-.slogan{font-family:"Marcellus",Georgia,serif; font-size:1.2rem; font-style:normal;}
+.slogan{font-weight:600; font-size:1.1rem; font-style:normal; letter-spacing:-.01em;}
 .echo{display:inline-block; border:1px solid var(--hair); color:var(--sub); padding:1px 10px;
   font-size:.72rem; margin-left:8px; vertical-align:middle; border-radius:999px;}
 .people{display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:1px; margin:1.2rem 0;}
