@@ -46,7 +46,10 @@ class LLM:
         load_env()
         self.usage = {"in": 0, "cached": 0, "out": 0}
         self._lock = threading.Lock()
-        if os.environ.get("OPENAI_API_KEY"):
+        forced = os.environ.get("TABLEREAD_PROVIDER")  # "openai" | "anthropic" | unset
+        use_openai = (forced == "openai" if forced
+                      else bool(os.environ.get("OPENAI_API_KEY")))
+        if use_openai:
             from openai import OpenAI
             self.provider = "openai"
             # Hard 60s request timeout: a hung connection must die, not stall a run.
@@ -68,12 +71,16 @@ class LLM:
         return (u["in"] - u["cached"]) / 1e6 * p[0] + u["cached"] / 1e6 * p[1] + u["out"] / 1e6 * p[2]
 
     def _openai_call(self, **kwargs):
-        """Retry hard on 429s: the org TPM limit is low, so waiting works."""
+        """Retry hard on rate-limit 429s (the org TPM limit is low, so waiting
+        works) — but fail immediately on exhausted credits, which no retry fixes."""
         import openai
         for attempt in range(10):
             try:
                 return self.client.chat.completions.create(**kwargs)
-            except openai.RateLimitError:
+            except openai.RateLimitError as e:
+                if "insufficient_quota" in str(e) or "credit_balance_exhausted" in str(e):
+                    raise RuntimeError("OpenAI account is out of credits — add credits or "
+                                       "switch provider (TABLEREAD_PROVIDER=anthropic)") from e
                 if attempt == 9:
                     raise
                 time.sleep(min(2 ** attempt, 30) + random.uniform(0, 2))
